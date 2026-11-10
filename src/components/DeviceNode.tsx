@@ -52,7 +52,9 @@ export function DeviceNode({
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (!entry) return
-      const { width, height } = entry.contentRect
+      const borderBox = entry.borderBoxSize?.[0]
+      const width = borderBox ? borderBox.inlineSize : element.offsetWidth
+      const height = borderBox ? borderBox.blockSize : element.offsetHeight
       onMeasure(node.id, Math.round(width), Math.round(height))
     })
 
