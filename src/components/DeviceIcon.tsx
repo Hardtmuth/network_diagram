@@ -142,5 +142,33 @@ export function DeviceIcon({ kind, size = 22 }: DeviceIconProps) {
           <path d="M10.5 18.5h3" />
         </svg>
       )
+    case 'nettop':
+      return (
+        <svg {...common}>
+          <rect x="6.5" y="4" width="11" height="13" rx="1.8" />
+          <path d="M10 20h4" />
+          <path d="M12 17v3" />
+          <path d="M9.5 7.5h5M9.5 10h3" />
+        </svg>
+      )
+    case 'printer3d':
+      return (
+        <svg {...common}>
+          <rect x="4" y="3.5" width="16" height="4.5" rx="1.2" />
+          <path d="M6 8v5M18 8v5" />
+          <path d="M12 8v4" />
+          <path d="M10 12h4" />
+          <path d="M7 13h10v5.5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" />
+          <path d="M10 16.5h4" />
+        </svg>
+      )
+    case 'other':
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+          <path d="M9.5 9.5a2.5 2.5 0 1 1 4 2c-.8.6-1.5 1.2-1.5 2.5" />
+          <path d="M12 17h.01" />
+        </svg>
+      )
   }
 }

@@ -8,6 +8,7 @@ import {
   HARDWARE_KINDS,
   LINK_KINDS,
   LINK_META,
+  OS_KINDS,
   PORT_KINDS,
   PORT_TYPES,
   PORT_TYPE_META,
@@ -281,6 +282,22 @@ function NodeForm({
           }
         />
       </div>
+
+      {OS_KINDS.includes(node.kind) && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-os">
+            ОС (операционная система)
+          </label>
+          <input
+            id="node-os"
+            value={node.os ?? ''}
+            placeholder="Например, Ubuntu 24.04"
+            onChange={(event) =>
+              onUpdateNode(node.id, { os: event.target.value })
+            }
+          />
+        </div>
+      )}
 
       {node.kind === 'printer' && (
         <div className="field">

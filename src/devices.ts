@@ -116,6 +116,27 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
     color: '#94a3b8',
     hint: 'Периферия',
   },
+  nettop: {
+    kind: 'nettop',
+    label: 'Неттоп',
+    category: 'Клиенты',
+    color: '#f9a8d4',
+    hint: 'Мини ПК',
+  },
+  printer3d: {
+    kind: 'printer3d',
+    label: '3D-принтер',
+    category: 'Клиенты',
+    color: '#c084fc',
+    hint: 'Аддитивная печать',
+  },
+  other: {
+    kind: 'other',
+    label: 'Другое',
+    category: 'Клиенты',
+    color: '#a3a3a3',
+    hint: 'Прочее устройство',
+  },
 }
 
 export const DEVICE_GROUPS: { label: DeviceCategory; kinds: DeviceKind[] }[] = [
@@ -126,7 +147,7 @@ export const DEVICE_GROUPS: { label: DeviceCategory; kinds: DeviceKind[] }[] = [
   },
   {
     label: 'Клиенты',
-    kinds: ['pc', 'laptop', 'phone', 'mobile', 'printer'],
+    kinds: ['pc', 'laptop', 'nettop', 'phone', 'mobile', 'printer', 'printer3d', 'other'],
   },
 ]
 
@@ -177,6 +198,8 @@ export const GROUP_COLORS = [
 ]
 
 export const HARDWARE_KINDS: DeviceKind[] = ['server', 'vm', 'nas']
+
+export const OS_KINDS: DeviceKind[] = ['pc', 'laptop', 'vm', 'server']
 
 export const PORT_KINDS: DeviceKind[] = [
   'router',

@@ -151,6 +151,8 @@ export function DeviceNode({
         {node.model || 'Модель не указана'}
       </p>
 
+      {node.os && <p className="node-model node-os">{node.os}</p>}
+
       {specChips.length > 0 && (
         <div className="node-specs">
           {specChips.map((chip) => (

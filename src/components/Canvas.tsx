@@ -94,9 +94,15 @@ interface GroupDrag {
   nodes: { id: string; x: number; y: number }[]
 }
 
+interface AlignGuides {
+  v: number[]
+  h: number[]
+}
+
 const GROUP_PADDING_X = 26
 const GROUP_PADDING_TOP = 26
 const GROUP_PADDING_BOTTOM = 26
+const SNAP_THRESHOLD = 6
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
@@ -175,6 +181,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const [connecting, setConnecting] = useState<ConnectDrag | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [gridMode, setGridMode] = useState<'dots' | 'lines' | 'none'>('dots')
+  const [alignGuides, setAlignGuides] = useState<AlignGuides>({ v: [], h: [] })
   const nodeDrag = useRef<NodeDrag | null>(null)
   const groupDrag = useRef<GroupDrag | null>(null)
   const panDrag = useRef<PanDrag | null>(null)
@@ -203,6 +210,105 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       }
     },
     [viewport],
+  )
+
+  const getSnap = useCallback(
+    (
+      moved: { id: string; x: number; y: number }[],
+      deltaX: number,
+      deltaY: number,
+    ) => {
+      if (moved.length === 0) {
+        return { deltaX, deltaY, guides: { v: [] as number[], h: [] as number[] } }
+      }
+      const movingIds = new Set(moved.map((m) => m.id))
+      const defaultSize: NodeSize = { w: NODE_WIDTH, h: NODE_HEIGHT_FALLBACK }
+
+      let minX = Number.POSITIVE_INFINITY
+      let minY = Number.POSITIVE_INFINITY
+      let maxX = Number.NEGATIVE_INFINITY
+      let maxY = Number.NEGATIVE_INFINITY
+      for (const m of moved) {
+        const size = sizesRef.current[m.id] ?? defaultSize
+        const x = m.x + deltaX
+        const y = m.y + deltaY
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x + size.w)
+        maxY = Math.max(maxY, y + size.h)
+      }
+      const centerX = (minX + maxX) / 2
+      const centerY = (minY + maxY) / 2
+
+      let snapDX = 0
+      let snapDY = 0
+      let bestX = SNAP_THRESHOLD + 1
+      let bestY = SNAP_THRESHOLD + 1
+      const guidesV = new Set<number>()
+      const guidesH = new Set<number>()
+
+      const xCandidates = [
+        { value: minX, apply: (t: number) => t - minX },
+        { value: centerX, apply: (t: number) => t - centerX },
+        { value: maxX, apply: (t: number) => t - maxX },
+      ]
+      const yCandidates = [
+        { value: minY, apply: (t: number) => t - minY },
+        { value: centerY, apply: (t: number) => t - centerY },
+        { value: maxY, apply: (t: number) => t - maxY },
+      ]
+
+      for (const node of nodes) {
+        if (movingIds.has(node.id)) continue
+        const size = sizesRef.current[node.id] ?? defaultSize
+        const tx = [node.x, node.x + size.w / 2, node.x + size.w]
+        const ty = [node.y, node.y + size.h / 2, node.y + size.h]
+
+        for (const c of xCandidates) {
+          for (const t of tx) {
+            const d = Math.abs(c.value - t)
+            if (d < bestX - 1e-6) {
+              bestX = d
+              snapDX = c.apply(t)
+              guidesV.clear()
+              guidesV.add(t)
+            } else if (Math.abs(d - bestX) < 1e-6 && d <= SNAP_THRESHOLD) {
+              guidesV.add(t)
+            }
+          }
+        }
+
+        for (const c of yCandidates) {
+          for (const t of ty) {
+            const d = Math.abs(c.value - t)
+            if (d < bestY - 1e-6) {
+              bestY = d
+              snapDY = c.apply(t)
+              guidesH.clear()
+              guidesH.add(t)
+            } else if (Math.abs(d - bestY) < 1e-6 && d <= SNAP_THRESHOLD) {
+              guidesH.add(t)
+            }
+          }
+        }
+      }
+
+      if (bestX > SNAP_THRESHOLD) {
+        snapDX = 0
+        guidesV.clear()
+      }
+      if (bestY > SNAP_THRESHOLD) {
+        snapDY = 0
+        guidesH.clear()
+      }
+
+      return {
+        deltaX: deltaX + snapDX,
+        deltaY: deltaY + snapDY,
+        guides: { v: [...guidesV], h: [...guidesH] },
+      }
+    },
+    [nodes],
   )
 
   const fitView = useCallback(() => {
@@ -532,20 +638,22 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     if (nodeDrag.current) {
       const drag = nodeDrag.current
       const point = toWorld(event.clientX, event.clientY)
-      const nextX = Math.round(point.x - drag.offsetX)
-      const nextY = Math.round(point.y - drag.offsetY)
+      const rawX = Math.round(point.x - drag.offsetX)
+      const rawY = Math.round(point.y - drag.offsetY)
+      const rawDeltaX = rawX - drag.anchorX
+      const rawDeltaY = rawY - drag.anchorY
+      const snap = getSnap(drag.nodes, rawDeltaX, rawDeltaY)
+      setAlignGuides(snap.guides)
       if (drag.nodes.length > 1) {
-        const deltaX = nextX - drag.anchorX
-        const deltaY = nextY - drag.anchorY
         onMoveNodes(
           drag.nodes.map((node) => ({
             id: node.id,
-            x: node.x + deltaX,
-            y: node.y + deltaY,
+            x: node.x + snap.deltaX,
+            y: node.y + snap.deltaY,
           })),
         )
       } else {
-        onMoveNode(drag.id, nextX, nextY)
+        onMoveNode(drag.id, drag.anchorX + snap.deltaX, drag.anchorY + snap.deltaY)
       }
       return
     }
@@ -553,13 +661,15 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     if (groupDrag.current) {
       const drag = groupDrag.current
       const point = toWorld(event.clientX, event.clientY)
-      const deltaX = Math.round(point.x - drag.startX)
-      const deltaY = Math.round(point.y - drag.startY)
+      const rawDeltaX = Math.round(point.x - drag.startX)
+      const rawDeltaY = Math.round(point.y - drag.startY)
+      const snap = getSnap(drag.nodes, rawDeltaX, rawDeltaY)
+      setAlignGuides(snap.guides)
       onMoveNodes(
         drag.nodes.map((node) => ({
           id: node.id,
-          x: node.x + deltaX,
-          y: node.y + deltaY,
+          x: node.x + snap.deltaX,
+          y: node.y + snap.deltaY,
         })),
       )
       return
@@ -596,6 +706,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     if (nodeDrag.current) {
       nodeDrag.current = null
       setDraggingIds([])
+      setAlignGuides({ v: [], h: [] })
       releasePointer(event.pointerId)
       return
     }
@@ -603,6 +714,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     if (groupDrag.current) {
       groupDrag.current = null
       setDraggingGroupId(null)
+      setAlignGuides({ v: [], h: [] })
       releasePointer(event.pointerId)
       return
     }
@@ -635,6 +747,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     setDraggingGroupId(null)
     setPanning(false)
     setConnecting(null)
+    setAlignGuides({ v: [], h: [] })
     releasePointer(event.pointerId)
   }
 
@@ -911,6 +1024,35 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 </g>
               )
             })()}
+
+          {alignGuides.v.map((x) => (
+            <line
+              key={`v-${x}`}
+              x1={x}
+              y1={-100000}
+              x2={x}
+              y2={100000}
+              stroke="#38bdf8"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              opacity={0.9}
+              pointerEvents="none"
+            />
+          ))}
+          {alignGuides.h.map((y) => (
+            <line
+              key={`h-${y}`}
+              x1={-100000}
+              y1={y}
+              x2={100000}
+              y2={y}
+              stroke="#38bdf8"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              opacity={0.9}
+              pointerEvents="none"
+            />
+          ))}
         </svg>
 
         {nodes.map((node) => (

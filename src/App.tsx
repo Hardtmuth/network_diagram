@@ -165,6 +165,7 @@ function parseNode(value: unknown): DeviceNode | null {
     notes: value.notes,
   }
 
+  if (typeof record.os === 'string') node.os = record.os
   if (typeof value.ip === 'string') node.ip = value.ip
   if (typeof value.mac === 'string') node.mac = value.mac
   if (

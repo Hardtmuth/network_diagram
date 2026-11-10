@@ -13,6 +13,9 @@ export type DeviceKind =
   | 'container'
   | 'isp'
   | 'usb'
+  | 'nettop'
+  | 'printer3d'
+  | 'other'
 
 export type LinkKind = 'ethernet' | 'fiber' | 'wifi' | 'usb' | 'vpn'
 
@@ -69,6 +72,7 @@ export interface DeviceNode {
   ip?: string
   mac?: string
   notes: string
+  os?: string
   printerInterface?: PrinterInterface
   wifiNetworks?: WifiNetwork[]
   apDhcpEnabled?: boolean
