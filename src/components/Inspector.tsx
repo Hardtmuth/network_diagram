@@ -243,7 +243,7 @@ function NodeForm({
 
       <div className="field">
         <label className="field-label" htmlFor="node-name">
-          Название
+          {t('inspector.nodeName')}
         </label>
         <input
           id="node-name"
@@ -257,7 +257,7 @@ function NodeForm({
 
       <div className="field">
         <label className="field-label" htmlFor="node-kind">
-          Тип устройства
+          {t('inspector.nodeType')}
         </label>
         <select
           id="node-kind"
@@ -276,7 +276,7 @@ function NodeForm({
 
       <div className="field">
         <label className="field-label" htmlFor="node-model">
-          Модель
+          {t('inspector.nodeModel')}
         </label>
         <input
           id="node-model"
@@ -291,7 +291,7 @@ function NodeForm({
       {OS_KINDS.includes(node.kind) && (
         <div className="field">
           <label className="field-label" htmlFor="node-os">
-            ОС (операционная система)
+            {t('inspector.nodeOs')}
           </label>
           <input
             id="node-os"
@@ -307,7 +307,7 @@ function NodeForm({
       {node.kind === 'printer' && (
         <div className="field">
           <label className="field-label" htmlFor="node-printer-interface">
-            Тип подключения
+            {t('inspector.printerInterface')}
           </label>
           <select
             id="node-printer-interface"
@@ -330,7 +330,7 @@ function NodeForm({
           <>
             <div className="field">
               <label className="field-label" htmlFor="node-ip">
-                IP-адрес
+                {t('inspector.nodeIp')}
               </label>
               <input
                 id="node-ip"
@@ -346,7 +346,7 @@ function NodeForm({
 
             <div className="field">
               <label className="field-label" htmlFor="node-mac">
-                MAC-адрес
+                {t('inspector.nodeMac')}
               </label>
               <input
                 id="node-mac"
@@ -376,7 +376,7 @@ function NodeForm({
 
       <div className="field">
         <label className="field-label" htmlFor="node-notes">
-          Заметки
+          {t('inspector.nodeNotes')}
         </label>
         <textarea
           id="node-notes"
@@ -391,7 +391,7 @@ function NodeForm({
 
       <div className="field">
         <label className="field-label" htmlFor="node-group">
-          Группа
+          {t('inspector.assignGroup')}
         </label>
         <select
           id="node-group"
@@ -1049,7 +1049,7 @@ function LinkForm({
 
       <div className="field">
         <label className="field-label" htmlFor="link-kind">
-          Тип связи
+          {t('inspector.linkType')}
         </label>
         <select
           id="link-kind"
@@ -1076,7 +1076,7 @@ function LinkForm({
       {link.kind === 'vpn' && (
         <div className="field">
           <label className="field-label" htmlFor="link-vpn">
-            Протокол VPN
+            {t('inspector.vpnProtocol')}
           </label>
           <select
             id="link-vpn"
@@ -1102,7 +1102,7 @@ function LinkForm({
 
       <div className="field">
         <label className="field-label" htmlFor="link-label">
-          Подпись
+          {t('inspector.linkLabel')}
         </label>
         <input
           id="link-label"
@@ -1188,7 +1188,7 @@ function GroupForm({
 
       <div className="field">
         <label className="field-label" htmlFor="group-name">
-          Название группы
+          {t('inspector.groupName')}
         </label>
         <input
           id="group-name"
