@@ -1,0 +1,412 @@
+{
+  "brand": {
+    "name": "Homelab Map",
+    "cabinet": "Личный кабинет"
+  },
+  "common": {
+    "close": "Закрыть",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "duplicate": "Дублировать",
+    "open": "Открыть",
+    "import": "Импорт",
+    "export": "Экспорт",
+    "devices": "Устройства",
+    "inspector": "Инспектор",
+    "group": "Группа",
+    "groups": "Группы",
+    "connections": "Связи",
+    "clear": "Очистить",
+    "example": "Пример",
+    "rename": "Переименовать",
+    "name": "Название",
+    "model": "Модель",
+    "notes": "Заметки",
+    "search": "Поиск",
+    "none": "Нет",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "topbar": {
+    "toDiagrams": "К списку схем",
+    "diagramName": "Название схемы",
+    "searchPlaceholder": "Поиск: имя, IP или MAC",
+    "searchAria": "Поиск по имени, IP или MAC",
+    "nothingFound": "Ничего не найдено",
+    "showSidebar": "Показать левую панель",
+    "hideSidebar": "Скрыть левую панель",
+    "showInspector": "Показать правую панель",
+    "hideInspector": "Скрыть правую панель",
+    "lightTheme": "Светлая",
+    "darkTheme": "Тёмная",
+    "enableLight": "Включить светлую тему",
+    "enableDark": "Включить тёмную тему",
+    "saving": "Сохранение…",
+    "saved": "Сохранено",
+    "loadExample": "Загрузить пример",
+    "importJson": "Импортировать JSON",
+    "exportDiagram": "Экспортировать схему",
+    "clearCanvas": "Очистить холст",
+    "language": "Язык"
+  },
+  "dashboard": {
+    "title": "Личный кабинет",
+    "subtitle": "Ваши схемы сохраняются локально в этом браузере.",
+    "importJson": "Импорт JSON",
+    "demoDiagram": "Демо-схема",
+    "newDiagram": "Новая схема",
+    "emptyTitle": "Схем пока нет",
+    "emptyText": "Создайте новую схему, загрузите демо или импортируйте JSON-файл.",
+    "createDiagram": "Создать схему",
+    "devicesCount": "{{count}} устр.",
+    "linksCount": "{{count}} связей",
+    "modified": "Изменено: {{date}}",
+    "deleteConfirm": "Удалить схему «{{title}}»?",
+    "untitled": "Без названия",
+    "copySuffix": "копия"
+  },
+  "sidebar": {
+    "library": "Библиотека",
+    "title": "Устройства",
+    "help": "Перетащите на холст или нажмите, чтобы добавить в центр.",
+    "addTitle": "Добавить: {{label}}",
+    "hide": "Скрыть панель устройств",
+    "foot": "Потяните за точку на карточке, чтобы соединить устройства."
+  },
+  "canvas": {
+    "dropHint": "Отпустите, чтобы добавить устройство",
+    "emptyTitle": "Соберите свою схему",
+    "emptyText": "Перетащите устройство из библиотеки слева или нажмите на него, чтобы добавить в центр холста.",
+    "hint": "Перетащите устройство · потяните за точку, чтобы соединить",
+    "zoomOut": "Уменьшить",
+    "zoomOutAria": "Уменьшить масштаб",
+    "zoomIn": "Увеличить",
+    "zoomInAria": "Увеличить масштаб",
+    "resetZoom": "Сбросить масштаб",
+    "fitView": "Показать всю схему",
+    "fitViewAria": "Показать всю схему",
+    "gridDots": "Сетка: точки (нажмите для линий)",
+    "gridLines": "Сетка: линии (нажмите чтобы скрыть)",
+    "gridNone": "Сетка: скрыта (нажмите для точек)",
+    "gridAria": "Изменить сетку",
+    "scaleHintCtrl": "Ctrl",
+    "scaleHint": " + колесо — масштаб · фон — панорама",
+    "groupDefault": "Группа"
+  },
+  "node": {
+    "modelEmpty": "Модель не указана",
+    "connectHint": "Потяните, чтобы соединить",
+    "portsSummary": "{{count}} портов",
+    "portGroupsMore": "+{{count}} групп",
+    "ethernet": "Ethernet",
+    "sfp": "SFP",
+    "ip": "IP",
+    "mac": "MAC",
+    "cpu": "CPU",
+    "ram": "RAM",
+    "disk_one": "диск",
+    "disk_few": "диска",
+    "disk_many": "дисков",
+    "core_one": "ядро",
+    "core_few": "ядра",
+    "core_many": "ядер"
+  },
+  "inspector": {
+    "eyebrow": "Инспектор",
+    "titleDevice": "Устройство",
+    "titleLink": "Связь",
+    "titleGroup": "Группа",
+    "titleSelection": "Выделение",
+    "titleParams": "Параметры",
+    "clearSelection": "Снять выделение",
+    "hidePanel": "Скрыть инспектор",
+    "emptyTitle": "Ничего не выбрано",
+    "emptyText": "Выберите устройство, связь или группу на холсте, чтобы изменить параметры.",
+    "nodeName": "Название",
+    "nodeType": "Тип устройства",
+    "nodeModel": "Модель",
+    "nodeIp": "IP-адрес",
+    "nodeMac": "MAC-адрес",
+    "nodeNotes": "Заметки",
+    "deleteDevice": "Удалить устройство",
+    "duplicateDevice": "Дублировать",
+    "assignGroup": "Группа",
+    "noGroup": "Без группы",
+    "deleteLink": "Удалить связь",
+    "linkLabel": "Подпись",
+    "linkType": "Тип связи",
+    "vpnProtocol": "VPN протокол",
+    "ungroup": "Расформировать",
+    "deleteGroup": "Удалить группу",
+    "groupName": "Название группы",
+    "groupColor": "Цвет группы",
+    "groupMembers": "Участники",
+    "createGroup": "Создать группу",
+    "deleteSelected": "Удалить выбранные",
+    "statsDevices": "Устройства",
+    "statsLinks": "Связи",
+    "statsGroups": "Группы",
+    "shortcuts": "Горячие клавиши",
+    "shortcutDelete": "Удалить выделенное",
+    "shortcutDuplicate": "Дублировать устройство",
+    "shortcutEsc": "Снять выделение",
+    "tip": "Совет: удерживайте Shift/Ctrl для множественного выделения, перетаскивайте от точки на карточке для соединения.",
+    "nodeNamePlaceholder": "Например, MikroTik hEX S",
+    "nodeOs": "ОС (операционная система)",
+    "nodeOsPlaceholder": "Например, Ubuntu 24.04",
+    "printerInterface": "Тип подключения",
+    "printerUsb": "USB",
+    "printerEthernet": "Ethernet",
+    "printerWifi": "Wi-Fi",
+    "nodeNotesPlaceholder": "Роль, VLAN, ОС, что ещё важно…",
+    "nodeGroupHint": "Устройство можно перенести в другую группу или убрать из неё.",
+    "hardwareConfig": "Конфигурация",
+    "notFilled": "Не заполнено",
+    "cpu": "CPU",
+    "cpuPlaceholder": "Intel Xeon E-2288G",
+    "cpuCores": "Ядер / потоков",
+    "ramGb": "ОЗУ, GB",
+    "storage": "Накопители",
+    "disk": "Диск",
+    "addDiskHint": "Добавьте диски, чтобы указать тип, объём и RAID.",
+    "diskType": "Тип диска",
+    "diskSizeGb": "Объём диска, GB",
+    "removeDisk": "Удалить диск",
+    "raidArray": "RAID-массив диска",
+    "noRaid": "Без RAID",
+    "raidArrays": "RAID-массивы",
+    "raidNamePlaceholder": "Имя массива",
+    "raidNameAria": "Имя RAID-массива",
+    "removeRaid": "Удалить RAID",
+    "raidLevel": "Уровень RAID",
+    "noDisks": "нет дисков",
+    "raidAssignHint": "Выберите RAID-массив в списке у каждого диска, чтобы объединить их.",
+    "wifiNetworks": "Wi-Fi сети",
+    "ssid": "SSID",
+    "removeNetwork": "Удалить сеть",
+    "wifiPassword": "Пароль",
+    "wifiPasswordAria": "Пароль Wi-Fi",
+    "addWifiNetwork": "Добавить Wi-Fi сеть",
+    "ownDhcp": "Собственный DHCP",
+    "dhcpNetwork": "Сеть (DHCP)",
+    "networkPorts": "Сетевые порты",
+    "ports": "Порты",
+    "portsHint": "Например: порты 1–20 — VLAN 10, отдел продаж; 23 — ISP1; 24 — ISP2.",
+    "portType": "Тип портов",
+    "portFirst": "Первый порт",
+    "portLast": "Последний порт",
+    "removePorts": "Удалить порты",
+    "portPurpose": "Назначение портов",
+    "portPurposePlaceholder": "VLAN 10 · отдел продаж",
+    "addPorts": "Добавить порты",
+    "linkKindHint": "Тип связи",
+    "linkLabelPlaceholderEth": "Например, 10G DAC или PoE",
+    "linkLabelHint": "Подпись отображается прямо на линии связи.",
+    "linkLabelHintVpn": " Если оставить пустой — будет показан протокол.",
+    "groupNamePlaceholder": "Например, Серверная",
+    "groupDevices": "Устройства в группе",
+    "groupDragHint": "Потяните за заголовок группы на холсте, чтобы переместить все устройства сразу.",
+    "ungroupWide": "Расформировать группу",
+    "multiSelected": "Выбрано устройств",
+    "multiHint": "Shift, Ctrl или Cmd + клик добавляет и убирает устройства из выделения.",
+    "mergeGroup": "Объединить в группу",
+    "emptySelect": "Выберите элемент",
+    "emptySelectHint": "Кликните по устройству, связи или группе, чтобы изменить их параметры.",
+    "shortcutSelectMultiple": "Выбрать несколько",
+    "shortcutScale": "Масштаб",
+    "autoSaveTip": "Изменения автоматически сохраняются в этом браузере.",
+    "deviceWord_one": "устройство",
+    "deviceWord_few": "устройства",
+    "deviceWord_many": "устройств",
+    "netWord_one": "сеть",
+    "netWord_few": "сети",
+    "netWord_many": "сетей",
+    "portWord_one": "порт",
+    "portWord_few": "порта",
+    "portWord_many": "портов",
+    "diskWord_one": "диск",
+    "diskWord_few": "диска",
+    "diskWord_many": "дисков"
+  },
+  "toast": {
+    "diagramDeleted": "Схема удалена",
+    "diagramDuplicated": "Схема продублирована",
+    "grouped": "Устройства объединены в группу",
+    "ungrouped": "Группа расформирована, устройства остались на холсте",
+    "canvasCleared": "Холст очищен",
+    "exampleLoaded": "Загружен пример домашней сети",
+    "jsonSaved": "JSON-файл схемы сохранён",
+    "jpegSaved": "JPEG-файл схемы сохранён",
+    "pdfSaved": "PDF-файл схемы сохранён",
+    "exportPreparing": "Подготовка экспорта…",
+    "exportFailed": "Не удалось экспортировать схему",
+    "importLoaded": "Схема загружена из файла",
+    "imported": "Схема импортирована",
+    "importFailed": "Не удалось прочитать файл — нужен JSON этой схемы"
+  },
+  "confirm": {
+    "deleteDiagram": "Удалить схему «{{title}}»?",
+    "clearCanvas": "Удалить все устройства, связи и группы с холста?",
+    "replaceWithExample": "Заменить текущую схему демонстрационным примером?"
+  },
+  "devices": {
+    "router": {
+      "label": "Роутер",
+      "hint": "Маршрутизация и NAT"
+    },
+    "switch": {
+      "label": "Коммутатор",
+      "hint": "Локальная сеть"
+    },
+    "ap": {
+      "label": "Точка доступа",
+      "hint": "Беспроводная сеть"
+    },
+    "server": {
+      "label": "Сервер",
+      "hint": "Сервисы и виртуализация"
+    },
+    "nas": {
+      "label": "NAS",
+      "hint": "Сетевое хранилище"
+    },
+    "vm": {
+      "label": "Виртуальная машина",
+      "hint": "Виртуальный сервер"
+    },
+    "container": {
+      "label": "Контейнер",
+      "hint": "Docker / LXC"
+    },
+    "usb": {
+      "label": "USB накопитель",
+      "hint": "Съёмное хранилище"
+    },
+    "isp": {
+      "label": "Интернет-провайдер",
+      "hint": "Внешний канал"
+    },
+    "pc": {
+      "label": "ПК",
+      "hint": "Стационарный клиент"
+    },
+    "laptop": {
+      "label": "Ноутбук",
+      "hint": "Мобильный клиент"
+    },
+    "phone": {
+      "label": "IP-телефон",
+      "hint": "VoIP-телефония"
+    },
+    "mobile": {
+      "label": "Смартфон",
+      "hint": "Мобильное устройство"
+    },
+    "printer": {
+      "label": "Принтер",
+      "hint": "Периферия"
+    },
+    "nettop": {
+      "label": "Неттоп",
+      "hint": "Мини ПК"
+    },
+    "printer3d": {
+      "label": "3D-принтер",
+      "hint": "Аддитивная печать"
+    },
+    "other": {
+      "label": "Другое",
+      "hint": "Прочее устройство"
+    }
+  },
+  "categories": {
+    "network": "Сеть",
+    "servers": "Серверы и NAS",
+    "clients": "Клиенты"
+  },
+  "links": {
+    "ethernet": "Ethernet",
+    "fiber": "Оптика / DAC",
+    "wifi": "Wi-Fi",
+    "usb": "USB / прочее",
+    "vpn": "VPN-туннель"
+  },
+  "vpn": {
+    "l2tp": {
+      "label": "L2TP/IPsec",
+      "description": "Классический VPN-туннель"
+    },
+    "openvpn": {
+      "label": "OpenVPN",
+      "description": "Гибкий туннель на TLS"
+    },
+    "wireguard": {
+      "label": "WireGuard",
+      "description": "Быстрый современный VPN"
+    }
+  },
+  "diskTypes": {
+    "sata-ssd": {
+      "label": "SATA SSD",
+      "short": "SATA SSD"
+    },
+    "hdd": {
+      "label": "HDD",
+      "short": "HDD"
+    },
+    "nvme": {
+      "label": "M.2 NVMe",
+      "short": "NVMe"
+    },
+    "m2-sata": {
+      "label": "M.2 SATA SSD",
+      "short": "M.2 SSD"
+    }
+  },
+  "raid": {
+    "raid0": {
+      "label": "RAID 0",
+      "hint": "Скорость без защиты"
+    },
+    "raid1": {
+      "label": "RAID 1",
+      "hint": "Зеркало"
+    },
+    "raid5": {
+      "label": "RAID 5",
+      "hint": "Чётность, минус 1 диск"
+    },
+    "raid6": {
+      "label": "RAID 6",
+      "hint": "Двойная чётность, минус 2 диска"
+    },
+    "raid10": {
+      "label": "RAID 10",
+      "hint": "Зеркало и скорость"
+    },
+    "jbod": {
+      "label": "JBOD",
+      "hint": "Объединение без RAID"
+    }
+  },
+  "ports": {
+    "ethernet": {
+      "label": "Ethernet (RJ45)",
+      "short": "Ethernet"
+    },
+    "sfp": {
+      "label": "SFP / SFP+",
+      "short": "SFP"
+    }
+  },
+  "defaults": {
+    "myNetwork": "Моя сеть",
+    "myDiagram": "Моя схема",
+    "newDiagram": "Новая схема",
+    "demoDiagram": "Демо-схема",
+    "importedDiagram": "Импортированная схема",
+    "untitled": "Без названия",
+    "groupName": "Группа {{index}}"
+  }
+}

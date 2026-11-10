@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   DEVICE_META,
   DEVICE_ORDER,
@@ -21,7 +22,6 @@ import {
   createRowId,
   diskTotalLabel,
   formatCapacity,
-  pluralRu,
   portCount,
   portRangeLabel,
   portsByType,
@@ -103,24 +103,25 @@ export function Inspector({
   onClose,
   onHidePanel,
 }: InspectorProps) {
+  const { t } = useTranslation()
   const hasSelection =
     Boolean(node || link || group) || selectedNodes.length > 0
   const title = node
-    ? 'Устройство'
+    ? t('inspector.titleDevice')
     : link
-      ? 'Связь'
+      ? t('inspector.titleLink')
       : group
-        ? 'Группа'
+        ? t('inspector.titleGroup')
         : selectedNodes.length > 0
-          ? 'Выделение'
-          : 'Параметры'
+          ? t('inspector.titleSelection')
+          : t('inspector.titleParams')
 
   return (
     <aside className={`inspector ${hasSelection ? 'is-open' : ''}`}>
       <div className="inspector-inner">
         <header className="inspector-head">
           <div>
-            <div className="inspector-eyebrow">Инспектор</div>
+            <div className="inspector-eyebrow">{t('inspector.eyebrow')}</div>
             <h2>{title}</h2>
           </div>
           <div className="inspector-head-actions">
@@ -129,8 +130,8 @@ export function Inspector({
                 type="button"
                 className="icon-button"
                 onClick={onClose}
-                aria-label="Снять выделение"
-                title="Снять выделение"
+                aria-label={t('inspector.clearSelection')}
+                title={t('inspector.clearSelection')}
               >
                 <Icon name="close" size={16} />
               </button>
@@ -139,8 +140,8 @@ export function Inspector({
               type="button"
               className="icon-button"
               onClick={onHidePanel}
-              aria-label="Скрыть инспектор"
-              title="Скрыть инспектор"
+              aria-label={t('inspector.hidePanel')}
+              title={t('inspector.hidePanel')}
             >
               <Icon name="panel-right" size={16} />
             </button>
@@ -219,7 +220,11 @@ function NodeForm({
   onDuplicateNode,
   onAssignGroup,
 }: NodeFormProps) {
+  const { t } = useTranslation()
   const meta = DEVICE_META[node.kind]
+  const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
+  const deviceHint = (kind: DeviceKind) => t(`devices.${kind}.hint`, { defaultValue: DEVICE_META[kind].hint })
+  const label = deviceLabel(node.kind)
 
   return (
     <>
@@ -231,8 +236,8 @@ function NodeForm({
           <DeviceIcon kind={node.kind} size={25} />
         </span>
         <span className="device-preview-text">
-          <strong>{node.name || meta.label}</strong>
-          <span>{meta.hint}</span>
+          <strong>{node.name || label}</strong>
+          <span>{deviceHint(node.kind)}</span>
         </span>
       </div>
 
@@ -243,7 +248,7 @@ function NodeForm({
         <input
           id="node-name"
           value={node.name}
-          placeholder={meta.label}
+          placeholder={label}
           onChange={(event) =>
             onUpdateNode(node.id, { name: event.target.value })
           }
@@ -263,7 +268,7 @@ function NodeForm({
         >
           {DEVICE_ORDER.map((kind) => (
             <option key={kind} value={kind}>
-              {DEVICE_META[kind].label}
+              {deviceLabel(kind)}
             </option>
           ))}
         </select>
@@ -276,7 +281,7 @@ function NodeForm({
         <input
           id="node-model"
           value={node.model}
-          placeholder="Например, MikroTik hEX S"
+          placeholder={t('inspector.nodeNamePlaceholder')}
           onChange={(event) =>
             onUpdateNode(node.id, { model: event.target.value })
           }
@@ -291,7 +296,7 @@ function NodeForm({
           <input
             id="node-os"
             value={node.os ?? ''}
-            placeholder="Например, Ubuntu 24.04"
+            placeholder={t('inspector.nodeOsPlaceholder')}
             onChange={(event) =>
               onUpdateNode(node.id, { os: event.target.value })
             }
@@ -313,9 +318,9 @@ function NodeForm({
               })
             }
           >
-            <option value="usb">USB</option>
-            <option value="ethernet">Ethernet</option>
-            <option value="wifi">Wi-Fi</option>
+            <option value="usb">{t('inspector.printerUsb')}</option>
+            <option value="ethernet">{t('inspector.printerEthernet')}</option>
+            <option value="wifi">{t('inspector.printerWifi')}</option>
           </select>
         </div>
       )}
@@ -377,7 +382,7 @@ function NodeForm({
           id="node-notes"
           value={node.notes}
           rows={3}
-          placeholder="Роль, VLAN, ОС, что ещё важно…"
+          placeholder={t('inspector.nodeNotesPlaceholder')}
           onChange={(event) =>
             onUpdateNode(node.id, { notes: event.target.value })
           }
@@ -395,15 +400,15 @@ function NodeForm({
             onAssignGroup(node.id, event.target.value || null)
           }
         >
-          <option value="">Без группы</option>
+          <option value="">{t('inspector.noGroup')}</option>
           {groups.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.name || 'Группа'}
+              {item.name || t('canvas.groupDefault')}
             </option>
           ))}
         </select>
         <span className="field-hint">
-          Устройство можно перенести в другую группу или убрать из неё.
+          {t('inspector.nodeGroupHint')}
         </span>
       </div>
 
@@ -414,7 +419,7 @@ function NodeForm({
           onClick={() => onDuplicateNode(node.id)}
         >
           <Icon name="copy" size={15} />
-          Дублировать
+          {t('inspector.duplicateDevice')}
         </button>
         <button
           type="button"
@@ -422,7 +427,7 @@ function NodeForm({
           onClick={() => onDeleteNode(node.id)}
         >
           <Icon name="trash" size={15} />
-          Удалить
+          {t('common.delete')}
         </button>
       </div>
     </>
@@ -448,6 +453,7 @@ interface HardwareSectionProps {
 }
 
 function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
+  const { t, i18n } = useTranslation()
   const disks = node.disks ?? []
   const raids = node.raids ?? []
   const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
@@ -505,38 +511,40 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
       raids: raids.filter((raid) => raid.id !== id),
     })
 
+  const pluralWord = (n: number, one: string, few: string, many: string) => {
+    if (i18n.resolvedLanguage === 'en') return n === 1 ? t(one) : t(many)
+    const m10 = n % 10, m100 = n % 100
+    if (m10 === 1 && m100 !== 11) return t(one)
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return t(few)
+    return t(many)
+  }
   const summary =
     disks.length > 0
-      ? `${disks.length} ${pluralRu(
-          disks.length,
-          'диск',
-          'диска',
-          'дисков',
-        )} · ${diskTotalLabel(disks)}`
-      : 'Не заполнено'
+      ? `${disks.length} ${pluralWord(disks.length, 'inspector.diskWord_one', 'inspector.diskWord_few', 'inspector.diskWord_many')} · ${diskTotalLabel(disks)}`
+      : t('inspector.notFilled')
 
   return (
     <section className="hw-section">
       <header className="hw-section-head">
-        <span className="hw-section-title">Конфигурация</span>
+        <span className="hw-section-title">{t('inspector.hardwareConfig')}</span>
         <span className="hw-section-hint">{summary}</span>
       </header>
 
       <div className="hw-grid">
         <div className="field hw-grid-wide">
           <label className="field-label" htmlFor="node-cpu">
-            CPU
+            {t('inspector.cpu')}
           </label>
           <input
             id="node-cpu"
             value={node.cpu ?? ''}
-            placeholder="Intel Xeon E-2288G"
+            placeholder={t('inspector.cpuPlaceholder')}
             onChange={(event) => patch({ cpu: event.target.value })}
           />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="node-cores">
-            Ядер / потоков
+            {t('inspector.cpuCores')}
           </label>
           <input
             id="node-cores"
@@ -552,7 +560,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
         </div>
         <div className="field">
           <label className="field-label" htmlFor="node-ram">
-            ОЗУ, GB
+            {t('inspector.ramGb')}
           </label>
           <input
             id="node-ram"
@@ -570,16 +578,16 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
 
       <div className="hw-subsection">
         <div className="hw-subhead">
-          <span>Накопители</span>
+          <span>{t('inspector.storage')}</span>
           <button type="button" className="hw-add" onClick={addDisk}>
             <Icon name="plus" size={13} />
-            Диск
+            {t('inspector.disk')}
           </button>
         </div>
 
         {disks.length === 0 && (
           <p className="hw-empty">
-            Добавьте диски, чтобы указать тип, объём и RAID.
+            {t('inspector.addDiskHint')}
           </p>
         )}
 
@@ -588,7 +596,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
             <div className="hw-item" key={disk.id}>
               <div className="hw-row">
                 <select
-                  aria-label="Тип диска"
+                  aria-label={t('inspector.diskType')}
                   value={disk.type}
                   onChange={(event) =>
                     updateDisk(disk.id, {
@@ -598,7 +606,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                 >
                   {DISK_TYPES.map((type) => (
                     <option key={type} value={type}>
-                      {DISK_TYPE_META[type].label}
+                      {t(`diskTypes.${type}.label`, { defaultValue: DISK_TYPE_META[type].label })}
                     </option>
                   ))}
                 </select>
@@ -608,7 +616,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                     min={0}
                     step={100}
                     inputMode="numeric"
-                    aria-label="Объём диска, GB"
+                    aria-label={t('inspector.diskSizeGb')}
                     value={disk.sizeGb || ''}
                     placeholder="GB"
                     onChange={(event) =>
@@ -623,8 +631,8 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                   type="button"
                   className="hw-remove"
                   onClick={() => removeDisk(disk.id)}
-                  title="Удалить диск"
-                  aria-label="Удалить диск"
+                  title={t('inspector.removeDisk')}
+                  aria-label={t('inspector.removeDisk')}
                 >
                   <Icon name="trash" size={13} />
                 </button>
@@ -632,17 +640,17 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
               <div className="hw-row is-sub">
                 <span className="hw-sublabel">RAID</span>
                 <select
-                  aria-label="RAID-массив диска"
+                  aria-label={t('inspector.raidArray')}
                   value={disk.raidId}
                   onChange={(event) =>
                     updateDisk(disk.id, { raidId: event.target.value })
                   }
                 >
-                  <option value="">Без RAID</option>
+                  <option value="">{t('inspector.noRaid')}</option>
                   {raids.map((raid) => (
                     <option key={raid.id} value={raid.id}>
                       {raid.name || 'RAID'} ·{' '}
-                      {RAID_LEVEL_META[raid.level].label}
+                      {t(`raid.${raid.level}.label`, { defaultValue: RAID_LEVEL_META[raid.level].label })}
                     </option>
                   ))}
                 </select>
@@ -654,7 +662,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
 
       <div className="hw-subsection">
         <div className="hw-subhead">
-          <span>RAID-массивы</span>
+          <span>{t('inspector.raidArrays')}</span>
           <button type="button" className="hw-add" onClick={addRaid}>
             <Icon name="plus" size={13} />
             RAID
@@ -672,8 +680,8 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                     <input
                       className="hw-name"
                       value={raid.name}
-                      placeholder="Имя массива"
-                      aria-label="Имя RAID-массива"
+                      placeholder={t('inspector.raidNamePlaceholder')}
+                      aria-label={t('inspector.raidNameAria')}
                       onChange={(event) =>
                         updateRaid(raid.id, { name: event.target.value })
                       }
@@ -682,15 +690,15 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                       type="button"
                       className="hw-remove"
                       onClick={() => removeRaid(raid.id)}
-                      title="Удалить RAID"
-                      aria-label="Удалить RAID"
+                      title={t('inspector.removeRaid')}
+                      aria-label={t('inspector.removeRaid')}
                     >
                       <Icon name="trash" size={13} />
                     </button>
                   </div>
                   <div className="hw-row is-sub">
                     <select
-                      aria-label="Уровень RAID"
+                      aria-label={t('inspector.raidLevel')}
                       value={raid.level}
                       onChange={(event) =>
                         updateRaid(raid.id, {
@@ -700,23 +708,18 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                     >
                       {RAID_LEVELS.map((level) => (
                         <option key={level} value={level}>
-                          {RAID_LEVEL_META[level].label}
+                          {t(`raid.${level}.label`, { defaultValue: RAID_LEVEL_META[level].label })}
                         </option>
                       ))}
                     </select>
                     <span className="hw-capacity">
                       {members.length > 0
-                        ? `${members.length} ${pluralRu(
-                            members.length,
-                            'диск',
-                            'диска',
-                            'дисков',
-                          )} · ≈ ${formatCapacity(usable)}`
-                        : 'нет дисков'}
+                        ? `${members.length} ${pluralWord(members.length, 'inspector.diskWord_one', 'inspector.diskWord_few', 'inspector.diskWord_many')} · ≈ ${formatCapacity(usable)}`
+                        : t('inspector.noDisks')}
                     </span>
                   </div>
                   <p className="hw-raid-hint">
-                    {RAID_LEVEL_META[raid.level].hint}
+                    {t(`raid.${raid.level}.hint`, { defaultValue: RAID_LEVEL_META[raid.level].hint })}
                   </p>
                 </div>
               )
@@ -725,7 +728,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
         )}
 
         <span className="hw-section-note">
-          Выберите RAID-массив в списке у каждого диска, чтобы объединить их.
+          {t('inspector.raidAssignHint')}
         </span>
       </div>
     </section>
@@ -744,6 +747,7 @@ function AccessPointSection({
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
 }) {
+  const { t, i18n } = useTranslation()
   const wifiNetworks = node.wifiNetworks ?? []
   const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
 
@@ -775,10 +779,10 @@ function AccessPointSection({
   return (
     <section className="hw-section">
       <header className="hw-section-head">
-        <span className="hw-section-title">Wi-Fi сети</span>
+        <span className="hw-section-title">{t('inspector.wifiNetworks')}</span>
         <span className="hw-section-hint">
           {wifiNetworks.length}{' '}
-          {pluralRu(wifiNetworks.length, 'сеть', 'сети', 'сетей')}
+          {(() => { const n=wifiNetworks.length; if (i18n.resolvedLanguage==='en') return n===1?t('inspector.netWord_one'):t('inspector.netWord_many'); const m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.netWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.netWord_few'):t('inspector.netWord_many') })()}
         </span>
       </header>
 
@@ -789,7 +793,7 @@ function AccessPointSection({
               <input
                 value={network.ssid}
                 placeholder={`SSID ${index + 1}`}
-                aria-label="SSID"
+                aria-label={t('inspector.ssid')}
                 onChange={(event) =>
                   updateNetwork(network.id, { ssid: event.target.value })
                 }
@@ -799,8 +803,8 @@ function AccessPointSection({
                   type="button"
                   className="hw-remove"
                   onClick={() => removeNetwork(network.id)}
-                  title="Удалить сеть"
-                  aria-label="Удалить сеть"
+                  title={t('inspector.removeNetwork')}
+                  aria-label={t('inspector.removeNetwork')}
                 >
                   <Icon name="trash" size={13} />
                 </button>
@@ -809,8 +813,8 @@ function AccessPointSection({
             <div className="hw-row is-sub">
               <input
                 value={network.password}
-                placeholder="Пароль"
-                aria-label="Пароль Wi-Fi"
+                placeholder={t('inspector.wifiPassword')}
+                aria-label={t('inspector.wifiPasswordAria')}
                 onChange={(event) =>
                   updateNetwork(network.id, { password: event.target.value })
                 }
@@ -822,13 +826,13 @@ function AccessPointSection({
 
       <button type="button" className="hw-add is-wide" onClick={addNetwork}>
         <Icon name="plus" size={13} />
-        Добавить Wi-Fi сеть
+        {t('inspector.addWifiNetwork')}
       </button>
 
       <div className="hw-subsection">
         <div className="field">
           <label className="field-label" htmlFor="ap-dhcp-enabled">
-            Собственный DHCP
+            {t('inspector.ownDhcp')}
           </label>
           <select
             id="ap-dhcp-enabled"
@@ -837,14 +841,14 @@ function AccessPointSection({
               patch({ apDhcpEnabled: event.target.value === 'yes' })
             }
           >
-            <option value="no">Нет</option>
-            <option value="yes">Да</option>
+            <option value="no">{t('common.no')}</option>
+            <option value="yes">{t('common.yes')}</option>
           </select>
         </div>
         {node.apDhcpEnabled && (
           <div className="field">
             <label className="field-label" htmlFor="ap-dhcp-network">
-              Сеть (DHCP)
+              {t('inspector.dhcpNetwork')}
             </label>
             <input
               id="ap-dhcp-network"
@@ -864,19 +868,20 @@ function AccessPointSection({
 }
 
 function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
+  const { t, i18n } = useTranslation()
   const ports = node.ports ?? []
   const patch = (next: PortGroup[]) => onUpdateNode(node.id, { ports: next })
   const counts = portsByType(ports)
   const total = portsTotal(ports)
 
   const isNetworkDevice = node.kind === 'server' || node.kind === 'vm' || node.kind === 'nas'
-  const title = isNetworkDevice ? 'Сетевые порты' : 'Порты'
+  const title = isNetworkDevice ? t('inspector.networkPorts') : t('inspector.ports')
   const summary =
     ports.length > 0
-      ? `${total} ${pluralRu(total, 'порт', 'порта', 'портов')}${
+      ? `${total} ${(() => { const n=total; if (i18n.resolvedLanguage==='en') return n===1?t('inspector.portWord_one'):t('inspector.portWord_many'); const m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.portWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.portWord_few'):t('inspector.portWord_many') })()}${
           counts.ethernet > 0 ? ` · ${counts.ethernet} Ethernet` : ''
         }${counts.sfp > 0 ? ` · ${counts.sfp} SFP` : ''}`
-      : 'Не заполнено'
+      : t('inspector.notFilled')
 
   const addPort = () => {
     const last = ports.reduce((max, port) => Math.max(max, port.to), 0)
@@ -915,7 +920,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
       </header>
 
       <p className="hw-empty">
-        Например: порты 1–20 — VLAN 10, отдел продаж; 23 — ISP1; 24 — ISP2.
+        {t('inspector.portsHint')}
       </p>
 
       <div className="hw-list">
@@ -927,7 +932,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
           >
             <div className="hw-row">
               <select
-                aria-label="Тип портов"
+                aria-label={t('inspector.portType')}
                 value={port.type}
                 onChange={(event) =>
                   updatePort(port.id, {
@@ -937,7 +942,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
               >
                 {PORT_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {PORT_TYPE_META[type].label}
+                    {t(`ports.${type}.label`, { defaultValue: PORT_TYPE_META[type].label })}
                   </option>
                 ))}
               </select>
@@ -947,7 +952,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                   min={1}
                   max={4096}
                   inputMode="numeric"
-                  aria-label="Первый порт"
+                  aria-label={t('inspector.portFirst')}
                   value={port.from}
                   onChange={(event) =>
                     setRange(port, 'from', event.target.value)
@@ -959,7 +964,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                   min={1}
                   max={4096}
                   inputMode="numeric"
-                  aria-label="Последний порт"
+                  aria-label={t('inspector.portLast')}
                   value={port.to}
                   onChange={(event) => setRange(port, 'to', event.target.value)}
                 />
@@ -970,8 +975,8 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                 onClick={() =>
                   patch(ports.filter((item) => item.id !== port.id))
                 }
-                title="Удалить порты"
-                aria-label="Удалить порты"
+                title={t('inspector.removePorts')}
+                aria-label={t('inspector.removePorts')}
               >
                 <Icon name="trash" size={13} />
               </button>
@@ -979,13 +984,13 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
             <div className="hw-row is-sub">
               <span className="hw-count">
                 {portCount(port)}{' '}
-                {pluralRu(portCount(port), 'порт', 'порта', 'портов')}
+                {(() => { const n=portCount(port); if (i18n.resolvedLanguage==='en') return n===1?t('inspector.portWord_one'):t('inspector.portWord_many'); const m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.portWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.portWord_few'):t('inspector.portWord_many') })()}
               </span>
               <input
                 className="hw-note"
                 value={port.note}
-                placeholder="VLAN 10 · отдел продаж"
-                aria-label="Назначение портов"
+                placeholder={t('inspector.portPurposePlaceholder')}
+                aria-label={t('inspector.portPurpose')}
                 onChange={(event) =>
                   updatePort(port.id, { note: event.target.value })
                 }
@@ -997,7 +1002,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
 
       <button type="button" className="hw-add is-wide" onClick={addPort}>
         <Icon name="plus" size={13} />
-        Добавить порты
+        {t('inspector.addPorts')}
       </button>
     </section>
   )
@@ -1011,9 +1016,9 @@ interface LinkFormProps {
   onDeleteLink: (id: string) => void
 }
 
-function nodeLabel(node?: DeviceNode) {
+function nodeLabel(node: DeviceNode | undefined, t: any) {
   if (!node) return '—'
-  return node.name || DEVICE_META[node.kind].label
+  return node.name || t(`devices.${node.kind}.label`, { defaultValue: DEVICE_META[node.kind].label })
 }
 
 function LinkForm({
@@ -1023,6 +1028,7 @@ function LinkForm({
   onUpdateLink,
   onDeleteLink,
 }: LinkFormProps) {
+  const { t } = useTranslation()
   const meta = LINK_META[link.kind]
   const protocol = link.vpnProtocol ?? 'wireguard'
 
@@ -1032,13 +1038,13 @@ function LinkForm({
         className="link-preview"
         style={{ '--link-color': meta.color } as CSSProperties}
       >
-        <span className="link-preview-name">{nodeLabel(linkFrom)}</span>
+        <span className="link-preview-name">{nodeLabel(linkFrom, t)}</span>
         <span className="link-preview-wire">
           <span className="link-preview-dot" />
           <span className="link-preview-line" />
           <span className="link-preview-dot" />
         </span>
-        <span className="link-preview-name is-right">{nodeLabel(linkTo)}</span>
+        <span className="link-preview-name is-right">{nodeLabel(linkTo, t)}</span>
       </div>
 
       <div className="field">
@@ -1060,11 +1066,11 @@ function LinkForm({
         >
           {LINK_KINDS.map((kind) => (
             <option key={kind} value={kind}>
-              {LINK_META[kind].label}
+              {t(`links.${kind}`, { defaultValue: LINK_META[kind].label })}
             </option>
           ))}
         </select>
-        <span className="field-hint">{meta.label}</span>
+        <span className="field-hint">{t(`links.${link.kind}`, { defaultValue: meta.label })}</span>
       </div>
 
       {link.kind === 'vpn' && (
@@ -1084,12 +1090,12 @@ function LinkForm({
           >
             {VPN_PROTOCOLS.map((item) => (
               <option key={item} value={item}>
-                {VPN_PROTOCOL_META[item].label}
+                {t(`vpn.${item}.label`, { defaultValue: VPN_PROTOCOL_META[item].label })}
               </option>
             ))}
           </select>
           <span className="field-hint">
-            {VPN_PROTOCOL_META[protocol].description}
+            {t(`vpn.${protocol}.description`, { defaultValue: VPN_PROTOCOL_META[protocol].description })}
           </span>
         </div>
       )}
@@ -1103,17 +1109,16 @@ function LinkForm({
           value={link.label}
           placeholder={
             link.kind === 'vpn'
-              ? VPN_PROTOCOL_META[protocol].label
-              : 'Например, 10G DAC или PoE'
+              ? t(`vpn.${protocol}.label`, { defaultValue: VPN_PROTOCOL_META[protocol].label })
+              : t('inspector.linkLabelPlaceholderEth')
           }
           onChange={(event) =>
             onUpdateLink(link.id, { label: event.target.value })
           }
         />
         <span className="field-hint">
-          Подпись отображается прямо на линии связи.
-          {link.kind === 'vpn' &&
-            ' Если оставить пустой — будет показан протокол.'}
+          {t('inspector.linkLabelHint')}
+          {link.kind === 'vpn' && t('inspector.linkLabelHintVpn')}
         </span>
       </div>
 
@@ -1122,10 +1127,10 @@ function LinkForm({
           className="link-kind-swatch"
           style={{ background: meta.color }}
         />
-        <span>{meta.label}</span>
+        <span>{t(`links.${link.kind}`, { defaultValue: meta.label })}</span>
         {link.kind === 'vpn' && (
           <span className="link-meta-badge">
-            {VPN_PROTOCOL_META[protocol].label}
+            {t(`vpn.${protocol}.label`, { defaultValue: VPN_PROTOCOL_META[protocol].label })}
           </span>
         )}
       </div>
@@ -1137,7 +1142,7 @@ function LinkForm({
           onClick={() => onDeleteLink(link.id)}
         >
           <Icon name="trash" size={15} />
-          Удалить связь
+          {t('inspector.deleteLink')}
         </button>
       </div>
     </>
@@ -1159,6 +1164,8 @@ function GroupForm({
   onSelectNodes,
   onUngroup,
 }: GroupFormProps) {
+  const { t, i18n } = useTranslation()
+  const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
   return (
     <>
       <div
@@ -1169,10 +1176,12 @@ function GroupForm({
           <Icon name="group" size={20} />
         </span>
         <span className="group-preview-text">
-          <strong>{group.name || 'Группа'}</strong>
+          <strong>{group.name || t('canvas.groupDefault')}</strong>
           <span>
             {group.nodeIds.length}{' '}
-            {group.nodeIds.length === 1 ? 'устройство' : 'устройств'}
+            {i18n.resolvedLanguage === 'en'
+              ? (group.nodeIds.length === 1 ? t('inspector.deviceWord_one') : t('inspector.deviceWord_many'))
+              : (() => { const n=group.nodeIds.length,m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.deviceWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.deviceWord_few'):t('inspector.deviceWord_many') })()}
           </span>
         </span>
       </div>
@@ -1184,7 +1193,7 @@ function GroupForm({
         <input
           id="group-name"
           value={group.name}
-          placeholder="Например, Серверная"
+          placeholder={t('inspector.groupNamePlaceholder')}
           onChange={(event) =>
             onUpdateGroup(group.id, { name: event.target.value })
           }
@@ -1192,7 +1201,7 @@ function GroupForm({
       </div>
 
       <div className="field">
-        <span className="field-label">Цвет группы</span>
+        <span className="field-label">{t('inspector.groupColor')}</span>
         <div className="swatch-row">
           {GROUP_COLORS.map((color) => (
             <button
@@ -1201,7 +1210,7 @@ function GroupForm({
               className={`swatch ${group.color === color ? 'is-active' : ''}`}
               style={{ '--swatch-color': color } as CSSProperties}
               onClick={() => onUpdateGroup(group.id, { color })}
-              aria-label={`Цвет ${color}`}
+              aria-label={color}
               title={color}
             />
           ))}
@@ -1209,7 +1218,7 @@ function GroupForm({
       </div>
 
       <div className="field">
-        <span className="field-label">Устройства в группе</span>
+        <span className="field-label">{t('inspector.groupDevices')}</span>
         <ul className="member-list">
           {groupNodes.map((member) => (
             <li key={member.id}>
@@ -1229,8 +1238,8 @@ function GroupForm({
                   <DeviceIcon kind={member.kind} size={15} />
                 </span>
                 <span className="member-text">
-                  <strong>{nodeLabel(member)}</strong>
-                  <span>{DEVICE_META[member.kind].label}</span>
+                  <strong>{nodeLabel(member, t)}</strong>
+                  <span>{deviceLabel(member.kind)}</span>
                 </span>
                 <code className={member.ip ? '' : 'is-empty'}>
                   {member.ip || '—'}
@@ -1240,8 +1249,7 @@ function GroupForm({
           ))}
         </ul>
         <span className="field-hint">
-          Потяните за заголовок группы на холсте, чтобы переместить все
-          устройства сразу.
+          {t('inspector.groupDragHint')}
         </span>
       </div>
 
@@ -1252,7 +1260,7 @@ function GroupForm({
           onClick={() => onUngroup(group.id)}
         >
           <Icon name="ungroup" size={15} />
-          Расформировать группу
+          {t('inspector.ungroupWide')}
         </button>
       </div>
     </>
@@ -1272,15 +1280,16 @@ function MultiSelectionForm({
   onSelectNodes,
   onDeleteNodes,
 }: MultiSelectionFormProps) {
+  const { t } = useTranslation()
+  const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
   return (
     <>
       <div className="multi-summary">
         <span className="multi-badge">{selectedNodes.length}</span>
         <span className="multi-summary-text">
-          <strong>Выбрано устройств</strong>
+          <strong>{t('inspector.multiSelected')}</strong>
           <span>
-            Shift, Ctrl или Cmd + клик добавляет и убирает устройства из
-            выделения.
+            {t('inspector.multiHint')}
           </span>
         </span>
       </div>
@@ -1304,8 +1313,8 @@ function MultiSelectionForm({
                 <DeviceIcon kind={member.kind} size={15} />
               </span>
               <span className="member-text">
-                <strong>{nodeLabel(member)}</strong>
-                <span>{DEVICE_META[member.kind].label}</span>
+                <strong>{nodeLabel(member, t)}</strong>
+                <span>{deviceLabel(member.kind)}</span>
               </span>
               <code className={member.ip ? '' : 'is-empty'}>
                 {member.ip || '—'}
@@ -1323,7 +1332,7 @@ function MultiSelectionForm({
           disabled={selectedNodes.length < 2}
         >
           <Icon name="group" size={15} />
-          Объединить в группу
+          {t('inspector.mergeGroup')}
         </button>
         <button
           type="button"
@@ -1331,7 +1340,7 @@ function MultiSelectionForm({
           onClick={() => onDeleteNodes(selectedNodes.map((member) => member.id))}
         >
           <Icon name="trash" size={15} />
-          Удалить выбранные
+          {t('inspector.deleteSelected')}
         </button>
       </div>
     </>
@@ -1349,60 +1358,60 @@ function EmptyInspector({
   linkCount,
   groupCount,
 }: EmptyInspectorProps) {
+  const { t } = useTranslation()
   return (
     <>
       <div className="empty-state">
         <span className="empty-orb">
           <Icon name="cursor" size={22} />
         </span>
-        <strong>Выберите элемент</strong>
+        <strong>{t('inspector.emptySelect')}</strong>
         <p>
-          Кликните по устройству, связи или группе, чтобы изменить их
-          параметры.
+          {t('inspector.emptySelectHint')}
         </p>
       </div>
 
       <div className="inspector-stats">
         <div className="stat-card">
           <span className="stat-value">{nodeCount}</span>
-          <span className="stat-label">Устройств</span>
+          <span className="stat-label">{t('inspector.statsDevices')}</span>
         </div>
         <div className="stat-card">
           <span className="stat-value">{linkCount}</span>
-          <span className="stat-label">Связей</span>
+          <span className="stat-label">{t('inspector.statsLinks')}</span>
         </div>
         <div className="stat-card">
           <span className="stat-value">{groupCount}</span>
-          <span className="stat-label">Групп</span>
+          <span className="stat-label">{t('inspector.statsGroups')}</span>
         </div>
       </div>
 
       <div className="shortcuts">
         <div className="shortcut-row">
-          <span>Выбрать несколько</span>
-          <kbd>Shift + клик</kbd>
+          <span>{t('inspector.shortcutSelectMultiple')}</span>
+          <kbd>Shift + Click</kbd>
         </div>
         <div className="shortcut-row">
-          <span>Удалить выбранное</span>
+          <span>{t('inspector.shortcutDelete')}</span>
           <kbd>Del</kbd>
         </div>
         <div className="shortcut-row">
-          <span>Дублировать</span>
+          <span>{t('inspector.shortcutDuplicate')}</span>
           <kbd>Ctrl D</kbd>
         </div>
         <div className="shortcut-row">
-          <span>Снять выделение</span>
+          <span>{t('inspector.clearSelection')}</span>
           <kbd>Esc</kbd>
         </div>
         <div className="shortcut-row">
-          <span>Масштаб</span>
-          <kbd>Ctrl + колесо</kbd>
+          <span>{t('inspector.shortcutScale')}</span>
+          <kbd>Ctrl + Wheel</kbd>
         </div>
       </div>
 
       <div className="inspector-tip">
         <span className="tip-dot" />
-        Изменения автоматически сохраняются в этом браузере.
+        {t('inspector.autoSaveTip')}
       </div>
     </>
   )

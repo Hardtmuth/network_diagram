@@ -27,6 +27,7 @@ import type {
   DeviceNode,
   Selection,
 } from '../types'
+import { useTranslation } from 'react-i18next'
 import { DeviceIcon } from './DeviceIcon'
 import { DeviceNode as DeviceNodeCard } from './DeviceNode'
 import { Icon } from './Icons'
@@ -171,6 +172,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   },
   ref,
 ) {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLDivElement>(null)
   const [viewport, setViewport] = useState<Viewport>({ x: 60, y: 40, scale: 0.9 })
   const [sizes, setSizes] = useState<Record<string, NodeSize>>({})
@@ -892,7 +894,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                 onPointerDown={(event) => handleGroupPointerDown(event, group)}
               >
                 <span className="group-box-dot" />
-                <span className="group-box-name">{group.name || 'Группа'}</span>
+                <span className="group-box-name">{group.name || t('canvas.groupDefault')}</span>
                 <span className="group-box-count">{group.nodeIds.length}</span>
               </div>
             </div>
@@ -1074,7 +1076,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         <div className="drop-overlay">
           <span className="drop-overlay-inner">
             <DeviceIcon kind="router" size={22} />
-            Отпустите, чтобы добавить устройство
+            {t('canvas.dropHint')}
           </span>
         </div>
       )}
@@ -1084,17 +1086,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           <span className="canvas-empty-icon">
             <Icon name="topology" size={26} />
           </span>
-          <strong>Соберите свою схему</strong>
-          <p>
-            Перетащите устройство из библиотеки слева или нажмите на него,
-            чтобы добавить в центр холста.
-          </p>
+          <strong>{t('canvas.emptyTitle')}</strong>
+          <p>{t('canvas.emptyText')}</p>
         </div>
       )}
 
       <div className="canvas-hint">
         <Icon name="cursor" size={14} />
-        <span>Перетащите устройство · потяните за точку, чтобы соединить</span>
+        <span>{t('canvas.hint')}</span>
       </div>
 
       <div
@@ -1105,8 +1104,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           type="button"
           className="zoom-button"
           onClick={() => zoomBy(1 / 1.15)}
-          title="Уменьшить"
-          aria-label="Уменьшить масштаб"
+          title={t('canvas.zoomOut')}
+          aria-label={t('canvas.zoomOutAria')}
         >
           <Icon name="minus" size={15} />
         </button>
@@ -1114,7 +1113,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           type="button"
           className="zoom-value"
           onClick={() => zoomBy(1 / viewport.scale)}
-          title="Сбросить масштаб"
+          title={t('canvas.resetZoom')}
         >
           {Math.round(viewport.scale * 100)}%
         </button>
@@ -1122,8 +1121,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           type="button"
           className="zoom-button"
           onClick={() => zoomBy(1.15)}
-          title="Увеличить"
-          aria-label="Увеличить масштаб"
+          title={t('canvas.zoomIn')}
+          aria-label={t('canvas.zoomInAria')}
         >
           <Icon name="plus" size={15} />
         </button>
@@ -1132,8 +1131,8 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           type="button"
           className="zoom-button"
           onClick={fitView}
-          title="Показать всю схему"
-          aria-label="Показать всю схему"
+          title={t('canvas.fitView')}
+          aria-label={t('canvas.fitViewAria')}
         >
           <Icon name="fit" size={15} />
         </button>
@@ -1147,19 +1146,19 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           }
           title={
             gridMode === 'dots'
-              ? 'Сетка: точки (нажмите для линий)'
+              ? t('canvas.gridDots')
               : gridMode === 'lines'
-                ? 'Сетка: линии (нажмите чтобы скрыть)'
-                : 'Сетка: скрыта (нажмите для точек)'
+                ? t('canvas.gridLines')
+                : t('canvas.gridNone')
           }
-          aria-label="Изменить сетку"
+          aria-label={t('canvas.gridAria')}
         >
           <Icon name={gridMode === 'dots' ? 'grip' : gridMode === 'lines' ? 'group' : 'close'} size={15} />
         </button>
       </div>
 
       <div className="canvas-scale-hint">
-        <span>Ctrl</span> + колесо — масштаб · фон — панорама
+        <span>{t('canvas.scaleHintCtrl')}</span>{t('canvas.scaleHint')}
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { CSSProperties, PointerEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   DEVICE_META,
   DISK_TYPE_META,
@@ -10,7 +11,6 @@ import {
 import {
   diskTotalLabel,
   formatCapacity,
-  pluralRu,
   portRangeShort,
   portsByType,
   portsTotal,
@@ -42,8 +42,10 @@ export function DeviceNode({
   onConnectStart,
   onMeasure,
 }: DeviceNodeProps) {
+  const { t, i18n } = useTranslation()
   const cardRef = useRef<HTMLElement>(null)
   const meta = DEVICE_META[node.kind]
+  const label = t(`devices.${node.kind}.label`, { defaultValue: meta.label })
 
   useEffect(() => {
     const element = cardRef.current
@@ -78,14 +80,29 @@ export function DeviceNode({
   const showHardware = HARDWARE_KINDS.includes(node.kind)
   const showPorts = PORT_KINDS.includes(node.kind) && ports.length > 0
 
+  const coresLabel = (count: number) => {
+    if (i18n?.resolvedLanguage === 'en') return count === 1 ? t('node.core_one') : t('node.core_many')
+    const mod10 = count % 10
+    const mod100 = count % 100
+    if (mod10 === 1 && mod100 !== 11) return t('node.core_one')
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return t('node.core_few')
+    return t('node.core_many')
+  }
+  const disksLabel = (count: number) => {
+    if (i18n?.resolvedLanguage === 'en') return count === 1 ? t('node.disk_one') : t('node.disk_many')
+    const mod10 = count % 10
+    const mod100 = count % 100
+    if (mod10 === 1 && mod100 !== 11) return t('node.disk_one')
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return t('node.disk_few')
+    return t('node.disk_many')
+  }
+
   const specChips: string[] = []
   if (showHardware) {
     const cpuParts: string[] = []
     if (node.cpu) cpuParts.push(node.cpu)
     if (node.cpuCores) {
-      cpuParts.push(
-        `${node.cpuCores} ${pluralRu(node.cpuCores, 'ядро', 'ядра', 'ядер')}`,
-      )
+      cpuParts.push(`${node.cpuCores} ${coresLabel(node.cpuCores)}`)
     }
     if (cpuParts.length > 0) specChips.push(`CPU · ${cpuParts.join(' · ')}`)
     if (node.ramGb) {
@@ -93,20 +110,18 @@ export function DeviceNode({
     }
     if (disks.length > 0) {
       specChips.push(
-        `${disks.length} ${pluralRu(disks.length, 'диск', 'диска', 'дисков')} · ${diskTotalLabel(disks)}`,
+        `${disks.length} ${disksLabel(disks.length)} · ${diskTotalLabel(disks)}`,
       )
     }
     for (const raid of raids) {
       const members = raidMembers(disks, raid.id)
       if (members.length === 0) continue
       const usable = raidUsableGb(members, raid.level)
+      const raidLabel = t(`raid.${raid.level}.label`, {
+        defaultValue: RAID_LEVEL_META[raid.level].label,
+      })
       specChips.push(
-        `${RAID_LEVEL_META[raid.level].label} · ${members.length} ${pluralRu(
-          members.length,
-          'диск',
-          'диска',
-          'дисков',
-        )}${usable > 0 ? ` · ${formatCapacity(usable)}` : ''}`,
+        `${raidLabel} · ${members.length} ${disksLabel(members.length)}${usable > 0 ? ` · ${formatCapacity(usable)}` : ''}`,
       )
     }
   }
@@ -116,7 +131,9 @@ export function DeviceNode({
     diskTypeCounts.set(disk.type, (diskTypeCounts.get(disk.type) ?? 0) + 1)
   }
   const diskTypeLine = [...diskTypeCounts]
-    .map(([type, count]) => `${count}× ${DISK_TYPE_META[type].short}`)
+    .map(([type, count]) =>
+      `${count}× ${t(`diskTypes.${type}.short`, { defaultValue: DISK_TYPE_META[type].short })}`,
+    )
     .join(' · ')
 
   const portCounts = portsByType(ports)
@@ -141,8 +158,8 @@ export function DeviceNode({
           <DeviceIcon kind={node.kind} size={21} />
         </span>
         <span className="node-heading">
-          <span className="node-kind">{meta.label}</span>
-          <span className="node-name">{node.name || meta.label}</span>
+          <span className="node-kind">{label}</span>
+          <span className="node-name">{node.name || label}</span>
         </span>
         <span className="node-grip">
           <Icon name="grip" size={14} />
@@ -150,7 +167,7 @@ export function DeviceNode({
       </header>
 
       <p className={`node-model ${node.model ? '' : 'is-empty'}`}>
-        {node.model || 'Модель не указана'}
+        {node.model || t('node.modelEmpty')}
       </p>
 
       {node.os && <p className="node-model node-os">{node.os}</p>}
@@ -171,15 +188,15 @@ export function DeviceNode({
       {showPorts && (
         <div className="node-port-groups">
           <div className="node-port-summary">
-            <span>{totalPorts} портов</span>
+            <span>{t('node.portsSummary', { count: totalPorts })}</span>
             {portCounts.ethernet > 0 && (
               <span className="node-port-type is-ethernet">
-                {portCounts.ethernet} × Ethernet
+                {portCounts.ethernet} × {t('node.ethernet')}
               </span>
             )}
             {portCounts.sfp > 0 && (
               <span className="node-port-type is-sfp">
-                {portCounts.sfp} × SFP
+                {portCounts.sfp} × {t('node.sfp')}
               </span>
             )}
           </div>
@@ -195,7 +212,7 @@ export function DeviceNode({
             </div>
           ))}
           {ports.length > 3 && (
-            <span className="node-port-more">+{ports.length - 3} групп</span>
+            <span className="node-port-more">{t('node.portGroupsMore', { count: ports.length - 3 })}</span>
           )}
         </div>
       )}
@@ -229,12 +246,12 @@ export function DeviceNode({
 
       <span
         className="port port--left"
-        title="Потяните, чтобы соединить"
+        title={t('node.connectHint')}
         onPointerDown={(event) => onConnectStart(event, node)}
       />
       <span
         className="port port--right"
-        title="Потяните, чтобы соединить"
+        title={t('node.connectHint')}
         onPointerDown={(event) => onConnectStart(event, node)}
       />
     </article>

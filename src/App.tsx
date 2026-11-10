@@ -1,6 +1,7 @@
 import { toJpeg } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ChangeEvent } from 'react'
 import './App.css'
 import { Canvas } from './components/Canvas'
@@ -282,7 +283,7 @@ function parseDiagram(value: unknown): DiagramSnapshot | null {
     title:
       typeof value.title === 'string' && value.title.trim()
         ? value.title
-        : 'Моя сеть',
+        : 'My network',
     nodes,
     connections,
     groups,
@@ -315,6 +316,7 @@ function safeFileName(title: string) {
 }
 
 function App() {
+  const { t, i18n } = useTranslation()
   const [store, setStore] = useState<DiagramsStore>(loadDiagramsStore)
   const [view, setView] = useState<View>('dashboard')
   const [activeId, setActiveId] = useState<string | null>(store.currentId)
@@ -432,7 +434,7 @@ function App() {
   const handleDeleteDiagram = (id: string) => {
     const target = store.diagrams.find((d) => d.id === id)
     if (!target) return
-    if (!window.confirm(`Удалить схему «${target.title}»?`)) return
+    if (!window.confirm(t('confirm.deleteDiagram', { title: target.title }))) return
     const diagrams = store.diagrams.filter((d) => d.id !== id)
     const currentId = store.currentId === id ? null : store.currentId
     const next = { ...store, diagrams, currentId }
@@ -442,23 +444,25 @@ function App() {
       setDiagram(null)
       setView('dashboard')
     }
-    setToast('Схема удалена')
+    setToast(t('toast.diagramDeleted'))
   }
 
   const handleDuplicateDiagram = (id: string) => {
     const source = store.diagrams.find((d) => d.id === id)
     if (!source) return
+    const suffix = t('dashboard.copySuffix')
+    const copyTitle = `${source.title} ${suffix}`
     const copy: DiagramEntry = {
       id: createId(),
-      title: `${source.title} копия`,
+      title: copyTitle,
       updatedAt: new Date().toISOString(),
       snapshot: {
         ...JSON.parse(JSON.stringify(source.snapshot)) as DiagramSnapshot,
-        title: `${source.title} копия`,
+        title: copyTitle,
       },
     }
     persistStore({ ...store, diagrams: [copy, ...store.diagrams] })
-    setToast('Схема продублирована')
+    setToast(t('toast.diagramDuplicated'))
   }
 
   const handleRenameDiagram = (id: string, title: string) => {
@@ -504,12 +508,13 @@ function App() {
       if (!current) return current
       const sameKind = current.nodes.filter((node) => node.kind === kind).length
       const meta = DEVICE_META[kind]
+      const label = t(`devices.${kind}.label`, { defaultValue: meta.label })
       const node: DeviceNode = {
         id,
         kind,
         x,
         y,
-        name: sameKind === 0 ? meta.label : `${meta.label} ${sameKind + 1}`,
+        name: sameKind === 0 ? label : `${label} ${sameKind + 1}`,
         model: '',
         ...(kind === 'usb' ? {} : { ip: '', mac: '' }),
         ...(kind === 'printer' ? { printerInterface: 'ethernet' as const } : {}),
@@ -612,7 +617,7 @@ function App() {
         id: newId,
         x: source.x + 32,
         y: source.y + 32,
-        name: `${source.name} копия`,
+        name: `${source.name} ${t('dashboard.copySuffix')}`,
         disks: source.disks?.map((disk) => ({ ...disk })),
         raids: source.raids?.map((raid) => ({ ...raid })),
         ports: source.ports?.map((port) => ({ ...port })),
@@ -703,14 +708,14 @@ function App() {
         .filter((group) => group.nodeIds.length > 0)
       const group: DeviceGroup = {
         id,
-        name: `Группа ${current.groups.length + 1}`,
+        name: t('defaults.groupName', { index: current.groups.length + 1 }),
         color: GROUP_COLORS[current.groups.length % GROUP_COLORS.length],
         nodeIds: uniqueIds,
       }
       return { ...current, groups: [...cleanedGroups, group] }
     })
     setSelection({ type: 'group', id })
-    setToast('Устройства объединены в группу')
+    setToast(t('toast.grouped'))
   }, [])
 
   const updateGroup = useCallback(
@@ -737,7 +742,7 @@ function App() {
       }
     })
     setSelection(null)
-    setToast('Группа расформирована, устройства остались на холсте')
+    setToast(t('toast.ungrouped'))
   }, [])
 
   const assignNodeToGroup = useCallback(
@@ -796,7 +801,7 @@ function App() {
   }, [deleteLink, deleteNodes, selection, ungroup])
 
   const clearCanvas = () => {
-    if (!window.confirm('Удалить все устройства, связи и группы с холста?')) {
+    if (!window.confirm(t('confirm.clearCanvas'))) {
       return
     }
     setDiagram((current) => {
@@ -804,7 +809,7 @@ function App() {
       return { ...current, nodes: [], connections: [], groups: [] }
     })
     setSelection(null)
-    setToast('Холст очищен')
+    setToast(t('toast.canvasCleared'))
   }
 
   const loadExample = () => {
@@ -813,13 +818,13 @@ function App() {
       diagram.nodes.length > 0 || diagram.connections.length > 0 || diagram.groups.length > 0
     if (
       hasContent &&
-      !window.confirm('Заменить текущую схему демонстрационным примером?')
+      !window.confirm(t('confirm.replaceWithExample'))
     ) {
       return
     }
     setDiagram(createDemoDiagram())
     setSelection(null)
-    setToast('Загружен пример домашней сети')
+    setToast(t('toast.exampleLoaded'))
     requestAnimationFrame(() => canvasRef.current?.fitView())
   }
 
@@ -841,7 +846,7 @@ function App() {
     )
     const blob = new Blob([payload], { type: 'application/json' })
     downloadBlob(blob, `${safeFileName(diagram.title)}.json`)
-    setToast('JSON-файл схемы сохранён')
+    setToast(t('toast.jsonSaved'))
   }
 
   const captureDiagramImage = async () => {
@@ -872,14 +877,14 @@ function App() {
   const exportImage = async (format: 'jpeg' | 'pdf') => {
     if (!diagram) return
     try {
-      setToast('Подготовка экспорта…')
+      setToast(t('toast.exportPreparing'))
       const dataUrl = await captureDiagramImage()
       const baseName = safeFileName(diagram.title)
       if (format === 'jpeg') {
         const response = await fetch(dataUrl)
         const blob = await response.blob()
         downloadBlob(blob, `${baseName}.jpg`)
-        setToast('JPEG-файл схемы сохранён')
+        setToast(t('toast.jpegSaved'))
       } else {
         const image = new Image()
         image.src = dataUrl
@@ -895,10 +900,10 @@ function App() {
         })
         pdf.addImage(dataUrl, 'JPEG', 0, 0, image.width, image.height)
         pdf.save(`${baseName}.pdf`)
-        setToast('PDF-файл схемы сохранён')
+        setToast(t('toast.pdfSaved'))
       }
     } catch {
-      setToast('Не удалось экспортировать схему')
+      setToast(t('toast.exportFailed'))
     }
   }
 
@@ -926,20 +931,20 @@ function App() {
       if (view === 'editor' && activeId && importTargetRef.current === 'editor') {
         setDiagram(parsed)
         setSelection(null)
-        setToast('Схема загружена из файла')
+        setToast(t('toast.importLoaded'))
         requestAnimationFrame(() => canvasRef.current?.fitView())
       } else {
         const entry: DiagramEntry = {
           id: createId(),
-          title: parsed.title || 'Импортированная схема',
+          title: parsed.title || t('defaults.importedDiagram'),
           updatedAt: new Date().toISOString(),
           snapshot: parsed,
         }
         createAndOpen(entry)
-        setToast('Схема импортирована')
+        setToast(t('toast.imported'))
       }
     } catch {
-      setToast('Не удалось прочитать файл — нужен JSON этой схемы')
+      setToast(t('toast.importFailed'))
     } finally {
       event.target.value = ''
     }
@@ -1068,8 +1073,8 @@ function App() {
                 type="button"
                 className="brand-mark as-button"
                 onClick={closeToDashboard}
-                title="К списку схем"
-                aria-label="К списку схем"
+                title={t('topbar.toDiagrams')}
+                aria-label={t('topbar.toDiagrams')}
               >
                 <Icon name="topology" size={20} />
               </button>
@@ -1080,7 +1085,7 @@ function App() {
                   className="brand-sub-link"
                   onClick={closeToDashboard}
                 >
-                  Личный кабинет
+                  {t('brand.cabinet')}
                 </button>
               </span>
             </div>
@@ -1089,7 +1094,7 @@ function App() {
               <input
                 className="diagram-title"
                 value={title}
-                aria-label="Название схемы"
+                aria-label={t('topbar.diagramName')}
                 spellCheck={false}
                 onChange={(event) =>
                   setDiagram((current) =>
@@ -1103,8 +1108,8 @@ function App() {
               <input
                 className="diagram-search-input"
                 value={searchQuery}
-                placeholder="Поиск: имя, IP или MAC"
-                aria-label="Поиск по имени, IP или MAC"
+                placeholder={t('topbar.searchPlaceholder')}
+                aria-label={t('topbar.searchAria')}
                 spellCheck={false}
                 onChange={(event) => {
                   setSearchQuery(event.target.value)
@@ -1115,7 +1120,7 @@ function App() {
               {searchOpen && normalizedQuery && (
                 <div className="diagram-search-results" role="listbox">
                   {searchResults.length === 0 ? (
-                    <div className="diagram-search-empty">Ничего не найдено</div>
+                    <div className="diagram-search-empty">{t('topbar.nothingFound')}</div>
                   ) : (
                     searchResults.map((node) => (
                       <button
@@ -1144,22 +1149,32 @@ function App() {
                 type="button"
                 className={`action-button ${showSidebar ? 'is-active' : ''}`}
                 onClick={() => setShowSidebar((value) => !value)}
-                title={showSidebar ? 'Скрыть левую панель' : 'Показать левую панель'}
-                aria-label={showSidebar ? 'Скрыть левую панель' : 'Показать левую панель'}
+                title={showSidebar ? t('topbar.hideSidebar') : t('topbar.showSidebar')}
+                aria-label={showSidebar ? t('topbar.hideSidebar') : t('topbar.showSidebar')}
               >
                 <Icon name="panel-left" size={15} />
-                <span className="action-label">Устройства</span>
+                <span className="action-label">{t('common.devices')}</span>
               </button>
 
               <button
                 type="button"
                 className={`action-button ${showInspector ? 'is-active' : ''}`}
                 onClick={() => setShowInspector((value) => !value)}
-                title={showInspector ? 'Скрыть правую панель' : 'Показать правую панель'}
-                aria-label={showInspector ? 'Скрыть правую панель' : 'Показать правую панель'}
+                title={showInspector ? t('topbar.hideInspector') : t('topbar.showInspector')}
+                aria-label={showInspector ? t('topbar.hideInspector') : t('topbar.showInspector')}
               >
                 <Icon name="panel-right" size={15} />
-                <span className="action-label">Инспектор</span>
+                <span className="action-label">{t('common.inspector')}</span>
+              </button>
+
+              <button
+                type="button"
+                className="action-button"
+                onClick={() => i18n.changeLanguage(i18n.resolvedLanguage === 'ru' ? 'en' : 'ru')}
+                title={t('topbar.language')}
+                aria-label={t('topbar.language')}
+              >
+                <span className="action-label">{i18n.resolvedLanguage === 'ru' ? 'EN' : 'RU'}</span>
               </button>
 
               <button
@@ -1168,21 +1183,19 @@ function App() {
                 onClick={() =>
                   setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
                 }
-                title={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
-                aria-label={
-                  theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'
-                }
+                title={theme === 'dark' ? t('topbar.enableLight') : t('topbar.enableDark')}
+                aria-label={theme === 'dark' ? t('topbar.enableLight') : t('topbar.enableDark')}
               >
                 <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
                 <span className="action-label">
-                  {theme === 'dark' ? 'Светлая' : 'Тёмная'}
+                  {theme === 'dark' ? t('topbar.lightTheme') : t('topbar.darkTheme')}
                 </span>
               </button>
 
               <span className={`save-status is-${saveState}`}>
                 <span className="save-dot" />
                 <span className="save-text">
-                  {saveState === 'saving' ? 'Сохранение…' : 'Сохранено'}
+                  {saveState === 'saving' ? t('topbar.saving') : t('topbar.saved')}
                 </span>
               </span>
 
@@ -1190,20 +1203,20 @@ function App() {
                 type="button"
                 className="action-button"
                 onClick={loadExample}
-                title="Загрузить пример"
+                title={t('topbar.loadExample')}
               >
                 <Icon name="sparkles" size={15} />
-                <span className="action-label">Пример</span>
+                <span className="action-label">{t('common.example')}</span>
               </button>
 
               <button
                 type="button"
                 className="action-button"
                 onClick={() => openImport('editor')}
-                title="Импортировать JSON"
+                title={t('topbar.importJson')}
               >
                 <Icon name="upload" size={15} />
-                <span className="action-label">Импорт</span>
+                <span className="action-label">{t('common.import')}</span>
               </button>
 
               <div className="export-menu-wrap" ref={exportMenuRef}>
@@ -1211,12 +1224,12 @@ function App() {
                   type="button"
                   className="action-button"
                   onClick={() => setExportMenuOpen((open) => !open)}
-                  title="Экспортировать схему"
+                  title={t('topbar.exportDiagram')}
                   aria-expanded={exportMenuOpen}
                   aria-haspopup="menu"
                 >
                   <Icon name="download" size={15} />
-                  <span className="action-label">Экспорт</span>
+                  <span className="action-label">{t('common.export')}</span>
                 </button>
                 {exportMenuOpen && (
                   <div className="export-menu" role="menu">
@@ -1252,10 +1265,10 @@ function App() {
                 type="button"
                 className="action-button is-danger"
                 onClick={clearCanvas}
-                title="Очистить холст"
+                title={t('topbar.clearCanvas')}
               >
                 <Icon name="trash" size={15} />
-                <span className="action-label">Очистить</span>
+                <span className="action-label">{t('common.clear')}</span>
               </button>
             </div>
           </header>

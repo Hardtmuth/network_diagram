@@ -1,0 +1,412 @@
+{
+  "brand": {
+    "name": "Homelab Map",
+    "cabinet": "Personal cabinet"
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "open": "Open",
+    "import": "Import",
+    "export": "Export",
+    "devices": "Devices",
+    "inspector": "Inspector",
+    "group": "Group",
+    "groups": "Groups",
+    "connections": "Connections",
+    "clear": "Clear",
+    "example": "Example",
+    "rename": "Rename",
+    "name": "Name",
+    "model": "Model",
+    "notes": "Notes",
+    "search": "Search",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "topbar": {
+    "toDiagrams": "Back to diagrams",
+    "diagramName": "Diagram name",
+    "searchPlaceholder": "Search: name, IP or MAC",
+    "searchAria": "Search by name, IP or MAC",
+    "nothingFound": "Nothing found",
+    "showSidebar": "Show left panel",
+    "hideSidebar": "Hide left panel",
+    "showInspector": "Show right panel",
+    "hideInspector": "Hide right panel",
+    "lightTheme": "Light",
+    "darkTheme": "Dark",
+    "enableLight": "Enable light theme",
+    "enableDark": "Enable dark theme",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "loadExample": "Load example",
+    "importJson": "Import JSON",
+    "exportDiagram": "Export diagram",
+    "clearCanvas": "Clear canvas",
+    "language": "Language"
+  },
+  "dashboard": {
+    "title": "Personal cabinet",
+    "subtitle": "Your diagrams are saved locally in this browser.",
+    "importJson": "Import JSON",
+    "demoDiagram": "Demo diagram",
+    "newDiagram": "New diagram",
+    "emptyTitle": "No diagrams yet",
+    "emptyText": "Create a new diagram, load a demo, or import a JSON file.",
+    "createDiagram": "Create diagram",
+    "devicesCount": "{{count}} devices",
+    "linksCount": "{{count}} links",
+    "modified": "Modified: {{date}}",
+    "deleteConfirm": "Delete diagram \"{{title}}\"?",
+    "untitled": "Untitled",
+    "copySuffix": "copy"
+  },
+  "sidebar": {
+    "library": "Library",
+    "title": "Devices",
+    "help": "Drag onto the canvas or click to add to the center.",
+    "addTitle": "Add: {{label}}",
+    "hide": "Hide devices panel",
+    "foot": "Drag from a point on a card to connect devices."
+  },
+  "canvas": {
+    "dropHint": "Drop to add a device",
+    "emptyTitle": "Build your diagram",
+    "emptyText": "Drag a device from the left library or click it to add to the canvas center.",
+    "hint": "Drag a device · pull from a point to connect",
+    "zoomOut": "Zoom out",
+    "zoomOutAria": "Zoom out",
+    "zoomIn": "Zoom in",
+    "zoomInAria": "Zoom in",
+    "resetZoom": "Reset zoom",
+    "fitView": "Fit to view",
+    "fitViewAria": "Fit diagram to view",
+    "gridDots": "Grid: dots (click for lines)",
+    "gridLines": "Grid: lines (click to hide)",
+    "gridNone": "Grid: hidden (click for dots)",
+    "gridAria": "Change grid",
+    "scaleHintCtrl": "Ctrl",
+    "scaleHint": " + wheel — zoom · background — pan",
+    "groupDefault": "Group"
+  },
+  "node": {
+    "modelEmpty": "Model not specified",
+    "connectHint": "Drag to connect",
+    "portsSummary": "{{count}} ports",
+    "portGroupsMore": "+{{count}} groups",
+    "ethernet": "Ethernet",
+    "sfp": "SFP",
+    "ip": "IP",
+    "mac": "MAC",
+    "cpu": "CPU",
+    "ram": "RAM",
+    "disk_one": "disk",
+    "disk_few": "disks",
+    "disk_many": "disks",
+    "core_one": "core",
+    "core_few": "cores",
+    "core_many": "cores"
+  },
+  "inspector": {
+    "eyebrow": "Inspector",
+    "titleDevice": "Device",
+    "titleLink": "Link",
+    "titleGroup": "Group",
+    "titleSelection": "Selection",
+    "titleParams": "Properties",
+    "clearSelection": "Clear selection",
+    "hidePanel": "Hide inspector",
+    "emptyTitle": "Nothing selected",
+    "emptyText": "Select a device, link, or group on the canvas to edit its properties.",
+    "nodeName": "Name",
+    "nodeType": "Device type",
+    "nodeModel": "Model",
+    "nodeIp": "IP address",
+    "nodeMac": "MAC address",
+    "nodeNotes": "Notes",
+    "deleteDevice": "Delete device",
+    "duplicateDevice": "Duplicate",
+    "assignGroup": "Group",
+    "noGroup": "No group",
+    "deleteLink": "Delete link",
+    "linkLabel": "Label",
+    "linkType": "Link type",
+    "vpnProtocol": "VPN protocol",
+    "ungroup": "Ungroup",
+    "deleteGroup": "Delete group",
+    "groupName": "Group name",
+    "groupColor": "Group color",
+    "groupMembers": "Members",
+    "createGroup": "Create group",
+    "deleteSelected": "Delete selected",
+    "statsDevices": "Devices",
+    "statsLinks": "Links",
+    "statsGroups": "Groups",
+    "shortcuts": "Shortcuts",
+    "shortcutDelete": "Delete selected",
+    "shortcutDuplicate": "Duplicate device",
+    "shortcutEsc": "Clear selection",
+    "tip": "Tip: hold Shift/Ctrl for multi-select, drag from a card point to connect.",
+    "nodeNamePlaceholder": "e.g. MikroTik hEX S",
+    "nodeOs": "OS (operating system)",
+    "nodeOsPlaceholder": "e.g. Ubuntu 24.04",
+    "printerInterface": "Connection type",
+    "printerUsb": "USB",
+    "printerEthernet": "Ethernet",
+    "printerWifi": "Wi-Fi",
+    "nodeNotesPlaceholder": "Role, VLAN, OS, anything important…",
+    "nodeGroupHint": "Move the device to another group or remove it from the group.",
+    "hardwareConfig": "Configuration",
+    "notFilled": "Not filled",
+    "cpu": "CPU",
+    "cpuPlaceholder": "Intel Xeon E-2288G",
+    "cpuCores": "Cores / threads",
+    "ramGb": "RAM, GB",
+    "storage": "Storage",
+    "disk": "Disk",
+    "addDiskHint": "Add disks to specify type, capacity, and RAID.",
+    "diskType": "Disk type",
+    "diskSizeGb": "Disk size, GB",
+    "removeDisk": "Remove disk",
+    "raidArray": "Disk RAID array",
+    "noRaid": "No RAID",
+    "raidArrays": "RAID arrays",
+    "raidNamePlaceholder": "Array name",
+    "raidNameAria": "RAID array name",
+    "removeRaid": "Remove RAID",
+    "raidLevel": "RAID level",
+    "noDisks": "no disks",
+    "raidAssignHint": "Select a RAID array for each disk to group them.",
+    "wifiNetworks": "Wi-Fi networks",
+    "ssid": "SSID",
+    "removeNetwork": "Remove network",
+    "wifiPassword": "Password",
+    "wifiPasswordAria": "Wi-Fi password",
+    "addWifiNetwork": "Add Wi-Fi network",
+    "ownDhcp": "Own DHCP",
+    "dhcpNetwork": "Network (DHCP)",
+    "networkPorts": "Network ports",
+    "ports": "Ports",
+    "portsHint": "Example: ports 1–20 — VLAN 10, sales; 23 — ISP1; 24 — ISP2.",
+    "portType": "Port type",
+    "portFirst": "First port",
+    "portLast": "Last port",
+    "removePorts": "Remove ports",
+    "portPurpose": "Port assignment",
+    "portPurposePlaceholder": "VLAN 10 · sales",
+    "addPorts": "Add ports",
+    "linkKindHint": "Link type",
+    "linkLabelPlaceholderEth": "e.g. 10G DAC or PoE",
+    "linkLabelHint": "The label is shown directly on the link line.",
+    "linkLabelHintVpn": " If left empty, the protocol will be shown.",
+    "groupNamePlaceholder": "e.g. Server room",
+    "groupDevices": "Devices in group",
+    "groupDragHint": "Drag the group header on the canvas to move all devices at once.",
+    "ungroupWide": "Ungroup",
+    "multiSelected": "Devices selected",
+    "multiHint": "Shift, Ctrl, or Cmd + click adds or removes devices from selection.",
+    "mergeGroup": "Merge into group",
+    "emptySelect": "Select an element",
+    "emptySelectHint": "Click a device, link, or group to edit its properties.",
+    "shortcutSelectMultiple": "Select multiple",
+    "shortcutScale": "Zoom",
+    "autoSaveTip": "Changes are saved automatically in this browser.",
+    "deviceWord_one": "device",
+    "deviceWord_few": "devices",
+    "deviceWord_many": "devices",
+    "netWord_one": "network",
+    "netWord_few": "networks",
+    "netWord_many": "networks",
+    "portWord_one": "port",
+    "portWord_few": "ports",
+    "portWord_many": "ports",
+    "diskWord_one": "disk",
+    "diskWord_few": "disks",
+    "diskWord_many": "disks"
+  },
+  "toast": {
+    "diagramDeleted": "Diagram deleted",
+    "diagramDuplicated": "Diagram duplicated",
+    "grouped": "Devices grouped together",
+    "ungrouped": "Group disbanded, devices remain on canvas",
+    "canvasCleared": "Canvas cleared",
+    "exampleLoaded": "Example home network loaded",
+    "jsonSaved": "Diagram JSON file saved",
+    "jpegSaved": "Diagram JPEG file saved",
+    "pdfSaved": "Diagram PDF file saved",
+    "exportPreparing": "Preparing export…",
+    "exportFailed": "Failed to export diagram",
+    "importLoaded": "Diagram loaded from file",
+    "imported": "Diagram imported",
+    "importFailed": "Could not read file — a JSON diagram is required"
+  },
+  "confirm": {
+    "deleteDiagram": "Delete diagram \"{{title}}\"?",
+    "clearCanvas": "Delete all devices, links, and groups from the canvas?",
+    "replaceWithExample": "Replace the current diagram with the demo example?"
+  },
+  "devices": {
+    "router": {
+      "label": "Router",
+      "hint": "Routing and NAT"
+    },
+    "switch": {
+      "label": "Switch",
+      "hint": "Local network"
+    },
+    "ap": {
+      "label": "Access point",
+      "hint": "Wireless network"
+    },
+    "server": {
+      "label": "Server",
+      "hint": "Services and virtualization"
+    },
+    "nas": {
+      "label": "NAS",
+      "hint": "Network storage"
+    },
+    "vm": {
+      "label": "Virtual machine",
+      "hint": "Virtual server"
+    },
+    "container": {
+      "label": "Container",
+      "hint": "Docker / LXC"
+    },
+    "usb": {
+      "label": "USB drive",
+      "hint": "Removable storage"
+    },
+    "isp": {
+      "label": "ISP",
+      "hint": "External uplink"
+    },
+    "pc": {
+      "label": "PC",
+      "hint": "Desktop client"
+    },
+    "laptop": {
+      "label": "Laptop",
+      "hint": "Mobile client"
+    },
+    "phone": {
+      "label": "IP phone",
+      "hint": "VoIP telephony"
+    },
+    "mobile": {
+      "label": "Smartphone",
+      "hint": "Mobile device"
+    },
+    "printer": {
+      "label": "Printer",
+      "hint": "Peripheral"
+    },
+    "nettop": {
+      "label": "Nettop",
+      "hint": "Mini PC"
+    },
+    "printer3d": {
+      "label": "3D printer",
+      "hint": "Additive printing"
+    },
+    "other": {
+      "label": "Other",
+      "hint": "Other device"
+    }
+  },
+  "categories": {
+    "network": "Network",
+    "servers": "Servers & NAS",
+    "clients": "Clients"
+  },
+  "links": {
+    "ethernet": "Ethernet",
+    "fiber": "Fiber / DAC",
+    "wifi": "Wi-Fi",
+    "usb": "USB / other",
+    "vpn": "VPN tunnel"
+  },
+  "vpn": {
+    "l2tp": {
+      "label": "L2TP/IPsec",
+      "description": "Classic VPN tunnel"
+    },
+    "openvpn": {
+      "label": "OpenVPN",
+      "description": "Flexible TLS-based tunnel"
+    },
+    "wireguard": {
+      "label": "WireGuard",
+      "description": "Fast modern VPN"
+    }
+  },
+  "diskTypes": {
+    "sata-ssd": {
+      "label": "SATA SSD",
+      "short": "SATA SSD"
+    },
+    "hdd": {
+      "label": "HDD",
+      "short": "HDD"
+    },
+    "nvme": {
+      "label": "M.2 NVMe",
+      "short": "NVMe"
+    },
+    "m2-sata": {
+      "label": "M.2 SATA SSD",
+      "short": "M.2 SSD"
+    }
+  },
+  "raid": {
+    "raid0": {
+      "label": "RAID 0",
+      "hint": "Speed without redundancy"
+    },
+    "raid1": {
+      "label": "RAID 1",
+      "hint": "Mirror"
+    },
+    "raid5": {
+      "label": "RAID 5",
+      "hint": "Parity, minus 1 disk"
+    },
+    "raid6": {
+      "label": "RAID 6",
+      "hint": "Double parity, minus 2 disks"
+    },
+    "raid10": {
+      "label": "RAID 10",
+      "hint": "Mirror and speed"
+    },
+    "jbod": {
+      "label": "JBOD",
+      "hint": "Span without RAID"
+    }
+  },
+  "ports": {
+    "ethernet": {
+      "label": "Ethernet (RJ45)",
+      "short": "Ethernet"
+    },
+    "sfp": {
+      "label": "SFP / SFP+",
+      "short": "SFP"
+    }
+  },
+  "defaults": {
+    "myNetwork": "My network",
+    "myDiagram": "My diagram",
+    "newDiagram": "New diagram",
+    "demoDiagram": "Demo diagram",
+    "importedDiagram": "Imported diagram",
+    "untitled": "Untitled",
+    "groupName": "Group {{index}}"
+  }
+}

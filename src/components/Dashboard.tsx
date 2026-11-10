@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { DiagramEntry } from '../storage'
 import { Icon } from './Icons'
 
@@ -12,18 +13,6 @@ interface DashboardProps {
   onImport: () => void
 }
 
-function formatDate(iso: string) {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 export function Dashboard({
   diagrams,
   onOpen,
@@ -34,6 +23,21 @@ export function Dashboard({
   onRename,
   onImport,
 }: DashboardProps) {
+  const { t, i18n } = useTranslation()
+  const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'ru-RU'
+
+  const formatDate = (iso: string) => {
+    const date = new Date(iso)
+    if (Number.isNaN(date.getTime())) return '—'
+    return date.toLocaleString(locale, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
   const sorted = [...diagrams].sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt),
   )
@@ -46,22 +50,22 @@ export function Dashboard({
             <Icon name="topology" size={22} />
           </span>
           <div>
-            <h1>Личный кабинет</h1>
-            <p>Ваши схемы сохраняются локально в этом браузере.</p>
+            <h1>{t('dashboard.title')}</h1>
+            <p>{t('dashboard.subtitle')}</p>
           </div>
         </div>
         <div className="dashboard-actions">
           <button type="button" className="action-button" onClick={onImport}>
             <Icon name="upload" size={15} />
-            <span className="action-label">Импорт JSON</span>
+            <span className="action-label">{t('dashboard.importJson')}</span>
           </button>
           <button type="button" className="action-button" onClick={onCreateDemo}>
             <Icon name="sparkles" size={15} />
-            <span className="action-label">Демо-схема</span>
+            <span className="action-label">{t('dashboard.demoDiagram')}</span>
           </button>
           <button type="button" className="action-button is-primary" onClick={onCreate}>
             <Icon name="plus" size={15} />
-            <span className="action-label">Новая схема</span>
+            <span className="action-label">{t('dashboard.newDiagram')}</span>
           </button>
         </div>
       </header>
@@ -71,12 +75,12 @@ export function Dashboard({
           <span className="empty-orb">
             <Icon name="topology" size={26} />
           </span>
-          <h2>Схем пока нет</h2>
-          <p>Создайте новую схему, загрузите демо или импортируйте JSON-файл.</p>
+          <h2>{t('dashboard.emptyTitle')}</h2>
+          <p>{t('dashboard.emptyText')}</p>
           <div className="dashboard-empty-actions">
             <button type="button" className="action-button is-primary" onClick={onCreate}>
               <Icon name="plus" size={15} />
-              <span className="action-label">Создать схему</span>
+              <span className="action-label">{t('dashboard.createDiagram')}</span>
             </button>
           </div>
         </div>
@@ -105,16 +109,16 @@ export function Dashboard({
                     value={diagram.title}
                     onClick={(event) => event.stopPropagation()}
                     onChange={(event) => onRename(diagram.id, event.target.value)}
-                    aria-label="Название схемы"
+                    aria-label={t('topbar.diagramName')}
                   />
                 </div>
                 <div className="diagram-card-meta">
-                  <span>{nodesCount} устр.</span>
+                  <span>{t('dashboard.devicesCount', { count: nodesCount })}</span>
                   <span>·</span>
-                  <span>{linksCount} связей</span>
+                  <span>{t('dashboard.linksCount', { count: linksCount })}</span>
                 </div>
                 <div className="diagram-card-date">
-                  Изменено: {formatDate(diagram.updatedAt)}
+                  {t('dashboard.modified', { date: formatDate(diagram.updatedAt) })}
                 </div>
                 <div className="diagram-card-actions">
                   <button
@@ -125,12 +129,12 @@ export function Dashboard({
                       onOpen(diagram.id)
                     }}
                   >
-                    Открыть
+                    {t('common.open')}
                   </button>
                   <button
                     type="button"
                     className="icon-button"
-                    title="Дублировать"
+                    title={t('common.duplicate')}
                     onClick={(event) => {
                       event.stopPropagation()
                       onDuplicate(diagram.id)
@@ -141,7 +145,7 @@ export function Dashboard({
                   <button
                     type="button"
                     className="icon-button is-danger"
-                    title="Удалить"
+                    title={t('common.delete')}
                     onClick={(event) => {
                       event.stopPropagation()
                       onDelete(diagram.id)
