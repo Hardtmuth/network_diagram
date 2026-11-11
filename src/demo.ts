@@ -303,8 +303,7 @@ export function createDemoDiagram(): DiagramSnapshot {
         wifiNetworks: [
           { id: 'demo-ap-wifi-1', ssid: 'Homelab', password: 'changeme123' },
         ],
-        apDhcpEnabled: false,
-        apDhcpNetwork: '',
+        apDhcpSubnets: [],
         notes: 'Wi-Fi 6 · PoE',
       },
     ],

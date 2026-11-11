@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -64,12 +65,15 @@ interface InspectorProps {
   selectedNodes: DeviceNode[]
   selectedGroupsList?: DeviceGroup[]
   groups: DeviceGroup[]
+  nodes: DeviceNode[]
+  connections: Connection[]
   nodeCount: number
   linkCount: number
   groupCount: number
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
+  onAddConnection: (from: string, to: string, kind?: LinkKind) => void
   onUpdateLink: (id: string, patch: Partial<Connection>) => void
   onDeleteLink: (id: string) => void
   onUpdateGroup: (id: string, patch: Partial<DeviceGroup>) => void
@@ -78,6 +82,7 @@ interface InspectorProps {
   onSelectNodes: (ids: string[]) => void
   onDeleteNodes: (ids: string[]) => void
   onUngroup: (id: string) => void
+  onSelect: (selection: import('../types').Selection) => void
   onClose: () => void
   onHidePanel: () => void
   readOnly?: boolean
@@ -94,12 +99,15 @@ export function Inspector({
   selectedNodes,
   selectedGroupsList = [],
   groups,
+  nodes,
+  connections,
   nodeCount,
   linkCount,
   groupCount,
   onUpdateNode,
   onDeleteNode,
   onDuplicateNode,
+  onAddConnection,
   onUpdateLink,
   onDeleteLink,
   onUpdateGroup,
@@ -108,6 +116,7 @@ export function Inspector({
   onSelectNodes,
   onDeleteNodes,
   onUngroup,
+  onSelect,
   onClose,
   onHidePanel,
   readOnly = false,
@@ -163,10 +172,16 @@ export function Inspector({
             node={node}
             nodeGroup={nodeGroup}
             groups={groups}
+            nodes={nodes}
+            connections={connections}
             onUpdateNode={onUpdateNode}
             onDeleteNode={onDeleteNode}
             onDuplicateNode={onDuplicateNode}
             onAssignGroup={onAssignGroup}
+            onAddConnection={onAddConnection}
+            onUpdateLink={onUpdateLink}
+            onDeleteLink={onDeleteLink}
+            onSelect={onSelect}
             readOnly={readOnly}
           />
         )}
@@ -222,10 +237,16 @@ interface NodeFormProps {
   node: DeviceNode
   nodeGroup?: DeviceGroup
   groups: DeviceGroup[]
+  nodes: DeviceNode[]
+  connections: Connection[]
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
   onAssignGroup: (nodeId: string, groupId: string | null) => void
+  onAddConnection: (from: string, to: string, kind?: LinkKind) => void
+  onUpdateLink: (id: string, patch: Partial<Connection>) => void
+  onDeleteLink: (id: string) => void
+  onSelect: (selection: import('../types').Selection) => void
   readOnly?: boolean
 }
 
@@ -233,10 +254,16 @@ function NodeForm({
   node,
   nodeGroup,
   groups,
+  nodes,
+  connections,
   onUpdateNode,
   onDeleteNode,
   onDuplicateNode,
   onAssignGroup,
+  onAddConnection,
+  onUpdateLink,
+  onDeleteLink,
+  onSelect,
   readOnly = false,
 }: NodeFormProps) {
   const { t } = useTranslation()
@@ -244,6 +271,15 @@ function NodeForm({
   const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
   const deviceHint = (kind: DeviceKind) => t(`devices.${kind}.hint`, { defaultValue: DEVICE_META[kind].hint })
   const label = deviceLabel(node.kind)
+  const [open, setOpen] = useState({
+    config: false,
+    ports: false,
+    group: false,
+    connections: false,
+    ap: false,
+    router: false,
+  })
+  const toggle = (key: keyof typeof open) => setOpen((s) => ({ ...s, [key]: !s[key] }))
 
   return (
     <>
@@ -371,83 +407,7 @@ function NodeForm({
         </div>
       )}
 
-      {OS_KINDS.includes(node.kind) && (
-        <div className="field">
-          <label className="field-label" htmlFor="node-os">
-            {t('inspector.nodeOs')}
-          </label>
-          <div className="os-picker" role="group" aria-label={t('inspector.nodeOs')}>
-            {OS_PRESETS.map((preset) => {
-              const active = getOsPreset(node.os)?.id === preset.id
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className={`os-preset ${active ? 'is-active' : ''}`}
-                  title={preset.label}
-                  aria-label={preset.label}
-                  aria-pressed={active}
-                  onClick={() => onUpdateNode(node.id, { os: preset.label })}
-                 disabled={readOnly}>
-                  <OsIcon os={preset.label} size={15} />
-                </button>
-              )
-            })}
-          </div>
-          <input
-            id="node-os"
-            value={node.os ?? ''}
-            placeholder={t('inspector.nodeOsPlaceholder')}
-            onChange={(event) =>
-              onUpdateNode(node.id, { os: event.target.value })
-            }
-           disabled={readOnly} />
-        </div>
-      )}
 
-      {node.kind === 'mobile' && (
-        <div className="field">
-          <label className="field-label">{t('inspector.mobilePlatform')}</label>
-          <div className="os-picker" role="group" aria-label={t('inspector.mobilePlatform')}>
-            {MOBILE_OS_PRESETS.map((preset) => {
-              const active =
-                node.mobileOs === preset.id || getOsPreset(node.os)?.id === preset.id
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className={`os-preset ${active ? 'is-active' : ''}`}
-                  title={preset.label}
-                  aria-label={preset.label}
-                  aria-pressed={active}
-                  onClick={() =>
-                    onUpdateNode(node.id, {
-                      mobileOs: preset.id as MobileOs,
-                      os: preset.label,
-                    })
-                  }
-                 disabled={readOnly}>
-                  <OsIcon os={preset.label} size={15} />
-                </button>
-              )
-            })}
-          </div>
-          <select
-            id="node-mobile-os"
-            value={node.mobileOs ?? (getOsPreset(node.os)?.id === 'ios' ? 'ios' : 'android')}
-            onChange={(event) => {
-              const mobileOs = event.target.value as MobileOs
-              onUpdateNode(node.id, {
-                mobileOs,
-                os: mobileOs === 'ios' ? 'iOS' : 'Android',
-              })
-            }}
-           disabled={readOnly}>
-            <option value="android">Android</option>
-            <option value="ios">iOS</option>
-          </select>
-        </div>
-      )}
 
       {node.kind === 'printer' && (
         <div className="field">
@@ -529,21 +489,86 @@ function NodeForm({
           </>
         )}
 
-      {HARDWARE_KINDS.includes(node.kind) && (
-        <HardwareSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
+      {(HARDWARE_KINDS.includes(node.kind) || node.kind === 'mobile') && (
+        <HardwareSection
+          node={node}
+          onUpdateNode={onUpdateNode}
+          readOnly={readOnly}
+          collapsed={!open.config}
+          onToggle={() => toggle('config')}
+        />
       )}
 
       {PORT_KINDS.includes(node.kind) && (
-        <PortsSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
+        <PortsSection
+          node={node}
+          onUpdateNode={onUpdateNode}
+          readOnly={readOnly}
+          collapsed={!open.ports}
+          onToggle={() => toggle('ports')}
+        />
       )}
 
       {node.kind === 'ap' && (
-        <AccessPointSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
+        <AccessPointSection
+          node={node}
+          onUpdateNode={onUpdateNode}
+          readOnly={readOnly}
+          collapsed={!open.ap}
+          onToggle={() => toggle('ap')}
+        />
       )}
 
       {node.kind === 'router' && (
-        <RouterSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
+        <RouterSection
+          node={node}
+          onUpdateNode={onUpdateNode}
+          readOnly={readOnly}
+          collapsed={!open.router}
+          onToggle={() => toggle('router')}
+        />
       )}
+
+      <section className={`hw-section ${open.group ? '' : 'is-collapsed'}`}>
+        <button type="button" className="hw-section-head is-toggle" onClick={() => toggle('group')}>
+          <span className="hw-section-title">{t('inspector.assignGroup')}</span>
+          <span className="hw-section-chevron" aria-hidden="true">{open.group ? '▾' : '▸'}</span>
+        </button>
+        {open.group && (
+          <div className="field">
+            <select
+              id="node-group"
+              value={nodeGroup?.id ?? ''}
+              onChange={(event) =>
+                onAssignGroup(node.id, event.target.value || null)
+              }
+             disabled={readOnly}>
+              <option value="">{t('inspector.noGroup')}</option>
+              {groups.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name || t('canvas.groupDefault')}
+                </option>
+              ))}
+            </select>
+            <span className="field-hint">
+              {t('inspector.nodeGroupHint')}
+            </span>
+          </div>
+        )}
+      </section>
+
+      <NodeConnectionsSection
+        node={node}
+        nodes={nodes}
+        connections={connections}
+        onAddConnection={onAddConnection}
+        onUpdateLink={onUpdateLink}
+        onDeleteLink={onDeleteLink}
+        onSelect={onSelect}
+        readOnly={readOnly}
+        collapsed={!open.connections}
+        onToggle={() => toggle('connections')}
+      />
 
       <div className="field">
         <label className="field-label" htmlFor="node-notes">
@@ -558,29 +583,6 @@ function NodeForm({
             onUpdateNode(node.id, { notes: event.target.value })
           }
          disabled={readOnly} />
-      </div>
-
-      <div className="field">
-        <label className="field-label" htmlFor="node-group">
-          {t('inspector.assignGroup')}
-        </label>
-        <select
-          id="node-group"
-          value={nodeGroup?.id ?? ''}
-          onChange={(event) =>
-            onAssignGroup(node.id, event.target.value || null)
-          }
-         disabled={readOnly}>
-          <option value="">{t('inspector.noGroup')}</option>
-          {groups.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name || t('canvas.groupDefault')}
-            </option>
-          ))}
-        </select>
-        <span className="field-hint">
-          {t('inspector.nodeGroupHint')}
-        </span>
       </div>
 
       <div className="inspector-actions">
@@ -605,6 +607,154 @@ function NodeForm({
   )
 }
 
+
+interface NodeConnectionsSectionProps {
+  node: DeviceNode
+  nodes: DeviceNode[]
+  connections: Connection[]
+  onAddConnection: (from: string, to: string, kind?: LinkKind) => void
+  onUpdateLink: (id: string, patch: Partial<Connection>) => void
+  onDeleteLink: (id: string) => void
+  onSelect: (selection: import('../types').Selection) => void
+  readOnly?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
+}
+
+function NodeConnectionsSection({
+  node,
+  nodes,
+  connections,
+  onAddConnection,
+  onUpdateLink,
+  onDeleteLink,
+  onSelect,
+  readOnly = false,
+  collapsed = false,
+  onToggle,
+}: NodeConnectionsSectionProps) {
+  const { t } = useTranslation()
+  const nodeLabel = (n?: DeviceNode) => n ? (n.name || t(`devices.${n.kind}.label`, { defaultValue: DEVICE_META[n.kind].label })) : '—'
+  const related = connections.filter((c) => c.from === node.id || c.to === node.id)
+  const connectedIds = new Set(related.map((c) => (c.from === node.id ? c.to : c.from)))
+  const targets = nodes.filter((n) => n.id !== node.id && !connectedIds.has(n.id))
+  const [targetId, setTargetId] = useState('')
+  const [kind, setKind] = useState<LinkKind>('ethernet')
+
+  const add = () => {
+    if (!targetId) return
+    onAddConnection(node.id, targetId, kind)
+    setTargetId('')
+  }
+
+  const head = onToggle ? (
+    <button type="button" className="hw-section-head is-toggle" onClick={onToggle}>
+      <span className="hw-section-title">{t('inspector.connectionsOfNode')}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+        <span className="hw-section-hint">{related.length}</span>
+        <span className="hw-section-chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+      </span>
+    </button>
+  ) : (
+    <header className="hw-section-head">
+      <span className="hw-section-title">{t('inspector.connectionsOfNode')}</span>
+      <span className="hw-section-hint">{related.length}</span>
+    </header>
+  )
+
+  return (
+    <section className={`hw-section ${collapsed ? 'is-collapsed' : ''}`}>
+      {head}
+      {!collapsed && (<>
+      {related.length === 0 && <p className="hw-empty">{t('inspector.noConnections')}</p>}
+
+      <div className="hw-list">
+        {related.map((c) => {
+          const otherId = c.from === node.id ? c.to : c.from
+          const other = nodes.find((n) => n.id === otherId)
+          const protocol = c.vpnProtocol ?? 'wireguard'
+          return (
+            <div className="hw-item" key={c.id}>
+              <div className="hw-row">
+                <button type="button" className="member-row" onClick={() => onSelect({ type: 'link', id: c.id })} style={{ flex: 1, textAlign: 'left' }}>
+                  <span className="member-icon" style={{ '--device-color': LINK_META[c.kind].color } as CSSProperties}>
+                    <span style={{ width: 10, height: 10, borderRadius: 999, background: LINK_META[c.kind].color, display: 'inline-block' }} />
+                  </span>
+                  <span className="member-text">
+                    <strong>{nodeLabel(other)}</strong>
+                    <span>{t(`links.${c.kind}`, { defaultValue: LINK_META[c.kind].label })}{c.label ? ` · ${c.label}` : ''}</span>
+                  </span>
+                </button>
+                <button type="button" className="hw-remove" onClick={() => onDeleteLink(c.id)} disabled={readOnly} title={t('common.delete')} aria-label={t('common.delete')}>
+                  <Icon name="trash" size={13} />
+                </button>
+              </div>
+              <div className="hw-row is-sub">
+                <select aria-label={t('inspector.linkType')} value={c.kind} onChange={(e) => {
+                  const nextKind = e.target.value as LinkKind
+                  if (nextKind === 'vpn') onUpdateLink(c.id, { kind: nextKind, vpnProtocol: c.vpnProtocol ?? 'wireguard' })
+                  else onUpdateLink(c.id, { kind: nextKind })
+                }} disabled={readOnly}>
+                  {LINK_KINDS.map((k) => <option key={k} value={k}>{t(`links.${k}`, { defaultValue: LINK_META[k].label })}</option>)}
+                </select>
+                {c.kind === 'vpn' && (
+                  <select aria-label={t('inspector.vpnProtocol')} value={protocol} onChange={(e) => onUpdateLink(c.id, { kind: 'vpn', vpnProtocol: e.target.value as VpnProtocol })} disabled={readOnly}>
+                    {VPN_PROTOCOLS.map((p) => <option key={p} value={p}>{t(`vpn.${p}.label`, { defaultValue: VPN_PROTOCOL_META[p].label })}</option>)}
+                  </select>
+                )}
+              </div>
+              <div className="hw-row is-sub">
+                <input value={c.label} placeholder={t('inspector.linkLabel')} aria-label={t('inspector.linkLabel')} onChange={(e) => onUpdateLink(c.id, { label: e.target.value })} disabled={readOnly} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="hw-subsection">
+        <div className="hw-subhead"><span>{t('inspector.createConnection')}</span></div>
+        <div className="field">
+          <label className="field-label" htmlFor={`conn-target-${node.id}`}>
+            {t('common.devices')}
+          </label>
+          <select
+            id={`conn-target-${node.id}`}
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            disabled={readOnly || targets.length === 0}
+          >
+            <option value="">{t('inspector.selectDevice')}</option>
+            {targets.map((n) => (
+              <option key={n.id} value={n.id}>{nodeLabel(n)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor={`conn-kind-${node.id}`}>
+            {t('inspector.linkType')}
+          </label>
+          <select
+            id={`conn-kind-${node.id}`}
+            value={kind}
+            onChange={(e) => setKind(e.target.value as LinkKind)}
+            disabled={readOnly}
+          >
+            {LINK_KINDS.map((k) => (
+              <option key={k} value={k}>{t(`links.${k}`, { defaultValue: LINK_META[k].label })}</option>
+            ))}
+          </select>
+        </div>
+        <button type="button" className="hw-add is-wide" onClick={add} disabled={readOnly || !targetId}>
+          <Icon name="plus" size={13} />
+          {t('inspector.addConnection')}
+        </button>
+      </div>
+      </>)}
+    </section>
+  )
+}
+
+
 function numberFromInput(value: string) {
   const trimmed = value.trim()
   if (trimmed === '') return undefined
@@ -622,9 +772,11 @@ interface HardwareSectionProps {
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
   readOnly?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
 }
 
-function HardwareSection({ node, onUpdateNode, readOnly = false }: HardwareSectionProps) {
+function HardwareSection({ node, onUpdateNode, readOnly = false, collapsed = false, onToggle }: HardwareSectionProps) {
   const { t, i18n } = useTranslation()
   const disks = node.disks ?? []
   const raids = node.raids ?? []
@@ -690,18 +842,110 @@ function HardwareSection({ node, onUpdateNode, readOnly = false }: HardwareSecti
     if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return t(few)
     return t(many)
   }
+  const showHardware = HARDWARE_KINDS.includes(node.kind)
   const summary =
-    disks.length > 0
+    showHardware && disks.length > 0
       ? `${disks.length} ${pluralWord(disks.length, 'inspector.diskWord_one', 'inspector.diskWord_few', 'inspector.diskWord_many')} · ${diskTotalLabel(disks)}`
-      : t('inspector.notFilled')
+      : showHardware
+        ? t('inspector.notFilled')
+        : (node.os || t('inspector.notFilled'))
+
+  const head = onToggle ? (
+    <button type="button" className="hw-section-head is-toggle" onClick={onToggle}>
+      <span className="hw-section-title">{t('inspector.hardwareConfig')}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+        <span className="hw-section-hint">{summary}</span>
+        <span className="hw-section-chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+      </span>
+    </button>
+  ) : (
+    <header className="hw-section-head">
+      <span className="hw-section-title">{t('inspector.hardwareConfig')}</span>
+      <span className="hw-section-hint">{summary}</span>
+    </header>
+  )
 
   return (
-    <section className="hw-section">
-      <header className="hw-section-head">
-        <span className="hw-section-title">{t('inspector.hardwareConfig')}</span>
-        <span className="hw-section-hint">{summary}</span>
-      </header>
-
+    <section className={`hw-section ${collapsed ? 'is-collapsed' : ''}`}>
+      {head}
+      {!collapsed && (<>
+      {OS_KINDS.includes(node.kind) && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-os">
+            {t('inspector.nodeOs')}
+          </label>
+          <div className="os-picker" role="group" aria-label={t('inspector.nodeOs')}>
+            {OS_PRESETS.map((preset) => {
+              const active = getOsPreset(node.os)?.id === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`os-preset ${active ? 'is-active' : ''}`}
+                  title={preset.label}
+                  aria-label={preset.label}
+                  aria-pressed={active}
+                  onClick={() => onUpdateNode(node.id, { os: preset.label })}
+                 disabled={readOnly}>
+                  <OsIcon os={preset.label} size={15} />
+                </button>
+              )
+            })}
+          </div>
+          <input
+            id="node-os"
+            value={node.os ?? ''}
+            placeholder={t('inspector.nodeOsPlaceholder')}
+            onChange={(event) =>
+              onUpdateNode(node.id, { os: event.target.value })
+            }
+           disabled={readOnly} />
+        </div>
+      )}
+      {node.kind === 'mobile' && (
+        <div className="field">
+          <label className="field-label">{t('inspector.mobilePlatform')}</label>
+          <div className="os-picker" role="group" aria-label={t('inspector.mobilePlatform')}>
+            {MOBILE_OS_PRESETS.map((preset) => {
+              const active =
+                node.mobileOs === preset.id || getOsPreset(node.os)?.id === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`os-preset ${active ? 'is-active' : ''}`}
+                  title={preset.label}
+                  aria-label={preset.label}
+                  aria-pressed={active}
+                  onClick={() =>
+                    onUpdateNode(node.id, {
+                      mobileOs: preset.id as MobileOs,
+                      os: preset.label,
+                    })
+                  }
+                 disabled={readOnly}>
+                  <OsIcon os={preset.label} size={15} />
+                </button>
+              )
+            })}
+          </div>
+          <select
+            id="node-mobile-os"
+            value={node.mobileOs ?? (getOsPreset(node.os)?.id === 'ios' ? 'ios' : 'android')}
+            onChange={(event) => {
+              const mobileOs = event.target.value as MobileOs
+              onUpdateNode(node.id, {
+                mobileOs,
+                os: mobileOs === 'ios' ? 'iOS' : 'Android',
+              })
+            }}
+           disabled={readOnly}>
+            <option value="android">Android</option>
+            <option value="ios">iOS</option>
+          </select>
+        </div>
+      )}
+      {showHardware && (<>
       <div className="hw-grid">
         <div className="field hw-grid-wide">
           <label className="field-label" htmlFor="node-cpu">
@@ -903,27 +1147,29 @@ function HardwareSection({ node, onUpdateNode, readOnly = false }: HardwareSecti
           {t('inspector.raidAssignHint')}
         </span>
       </div>
+      </>)}
+      </>)}
     </section>
   )
 }
 
-interface PortsSectionProps {
-  node: DeviceNode
-  onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
-  readOnly?: boolean
-}
 
 function AccessPointSection({
   node,
   onUpdateNode,
   readOnly = false,
+  collapsed = false,
+  onToggle,
 }: {
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
   readOnly?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
 }) {
   const { t, i18n } = useTranslation()
   const wifiNetworks = node.wifiNetworks ?? []
+  const dhcpSubnets = node.apDhcpSubnets ?? []
   const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
 
   const updateNetwork = (id: string, value: Partial<WifiNetwork>) => {
@@ -933,7 +1179,6 @@ function AccessPointSection({
       ),
     })
   }
-
   const addNetwork = () => {
     patch({
       wifiNetworks: [
@@ -942,7 +1187,6 @@ function AccessPointSection({
       ],
     })
   }
-
   const removeNetwork = (id: string) => {
     const next = wifiNetworks.filter((item) => item.id !== id)
     patch({
@@ -951,227 +1195,135 @@ function AccessPointSection({
     })
   }
 
-  return (
-    <section className="hw-section">
-      <header className="hw-section-head">
-        <span className="hw-section-title">{t('inspector.wifiNetworks')}</span>
-        <span className="hw-section-hint">
-          {wifiNetworks.length}{' '}
-          {(() => { const n=wifiNetworks.length; if (i18n.resolvedLanguage==='en') return n===1?t('inspector.netWord_one'):t('inspector.netWord_many'); const m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.netWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.netWord_few'):t('inspector.netWord_many') })()}
-        </span>
-      </header>
-
-      <div className="hw-list">
-        {wifiNetworks.map((network, index) => (
-          <div className="hw-item" key={network.id}>
-            <div className="hw-row">
-              <input
-                value={network.ssid}
-                placeholder={`SSID ${index + 1}`}
-                aria-label={t('inspector.ssid')}
-                onChange={(event) =>
-                  updateNetwork(network.id, { ssid: event.target.value })
-                }
-               disabled={readOnly} />
-              {wifiNetworks.length > 1 && (
-                <button
-                  type="button"
-                  className="hw-remove"
-                  onClick={() => removeNetwork(network.id)}
-                  title={t('inspector.removeNetwork')}
-                  aria-label={t('inspector.removeNetwork')}
-                 disabled={readOnly}>
-                  <Icon name="trash" size={13} />
-                </button>
-              )}
-            </div>
-            <div className="hw-row is-sub">
-              <input
-                value={network.password}
-                placeholder={t('inspector.wifiPassword')}
-                aria-label={t('inspector.wifiPasswordAria')}
-                onChange={(event) =>
-                  updateNetwork(network.id, { password: event.target.value })
-                }
-               disabled={readOnly} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
-        <Icon name="plus" size={13} />
-        {t('inspector.addWifiNetwork')}
-      </button>
-
-      <div className="hw-subsection">
-        <div className="field">
-          <label className="field-label" htmlFor="ap-dhcp-enabled">
-            {t('inspector.ownDhcp')}
-          </label>
-          <select
-            id="ap-dhcp-enabled"
-            value={node.apDhcpEnabled ? 'yes' : 'no'}
-            onChange={(event) =>
-              patch({ apDhcpEnabled: event.target.value === 'yes' })
-            }
-           disabled={readOnly}>
-            <option value="no">{t('common.no')}</option>
-            <option value="yes">{t('common.yes')}</option>
-          </select>
-        </div>
-        {node.apDhcpEnabled && (
-          <div className="field">
-            <label className="field-label" htmlFor="ap-dhcp-network">
-              {t('inspector.dhcpNetwork')}
-            </label>
-            <input
-              id="ap-dhcp-network"
-              className="mono-input"
-              value={node.apDhcpNetwork ?? ''}
-              placeholder="192.168.10.0/24"
-              spellCheck={false}
-              onChange={(event) =>
-                patch({ apDhcpNetwork: event.target.value })
-              }
-             disabled={readOnly} />
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function RouterSection({
-  node,
-  onUpdateNode,
-  readOnly = false,
-}: {
-  node: DeviceNode
-  onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
-  readOnly?: boolean
-}) {
-  const { t } = useTranslation()
-  const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
-  const wifiEnabled = node.routerWifiEnabled ?? false
-  const wifiNetworks = node.wifiNetworks ?? []
-  const dhcpSubnets = node.routerDhcpSubnets ?? []
-
-  const updateNetwork = (id: string, value: Partial<WifiNetwork>) => {
-    patch({
-      wifiNetworks: wifiNetworks.map((item) =>
-        item.id === id ? { ...item, ...value } : item,
-      ),
-    })
-  }
-  const addNetwork = () => {
-    patch({
-      wifiNetworks: [
-        ...wifiNetworks,
-        { id: createRowId(), ssid: '', password: '' },
-      ],
-    })
-  }
-  const removeNetwork = (id: string) => {
-    const next = wifiNetworks.filter((item) => item.id !== id)
-    patch({ wifiNetworks: next })
-  }
-
   const updateSubnet = (id: string, value: Partial<DhcpSubnet>) => {
     patch({
-      routerDhcpSubnets: dhcpSubnets.map((item) =>
+      apDhcpSubnets: dhcpSubnets.map((item) =>
         item.id === id ? { ...item, ...value } : item,
       ),
     })
   }
   const addSubnet = () => {
     patch({
-      routerDhcpSubnets: [
+      apDhcpSubnets: [
         ...dhcpSubnets,
         { id: createRowId(), vlan: '', subnet: '', description: '' },
       ],
     })
   }
   const removeSubnet = (id: string) => {
-    patch({ routerDhcpSubnets: dhcpSubnets.filter((item) => item.id !== id) })
+    patch({ apDhcpSubnets: dhcpSubnets.filter((item) => item.id !== id) })
   }
 
+  const copyPassword = async (password: string) => {
+    try {
+      await navigator.clipboard?.writeText(password ?? '')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const summary = `${wifiNetworks.length} ${(() => { const n=wifiNetworks.length; if (i18n.resolvedLanguage==='en') return n===1?t('inspector.netWord_one'):t('inspector.netWord_many'); const m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.netWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.netWord_few'):t('inspector.netWord_many') })()}`
+  const head = onToggle ? (
+    <button type="button" className="hw-section-head is-toggle" onClick={onToggle}>
+      <span className="hw-section-title">{t('inspector.apSettings')}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
+        <span className="hw-section-hint">{summary}</span>
+        <span className="hw-section-chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+      </span>
+    </button>
+  ) : (
+    <header className="hw-section-head">
+      <span className="hw-section-title">{t('inspector.apSettings')}</span>
+      <span className="hw-section-hint">{summary}</span>
+    </header>
+  )
+
   return (
-    <section className="hw-section">
-      <header className="hw-section-head">
-        <span className="hw-section-title">{t('inspector.routerSettings')}</span>
-      </header>
-
+    <section className={`hw-section ${collapsed ? 'is-collapsed' : ''}`}>
+      {head}
+      {!collapsed && (<>
       <div className="hw-subsection">
-        <div className="field">
-          <label className="field-label" htmlFor="router-wifi-enabled">
-            {t('inspector.wifi')}
-          </label>
-          <select
-            id="router-wifi-enabled"
-            value={wifiEnabled ? 'yes' : 'no'}
-            onChange={(event) => {
-              const enabled = event.target.value === 'yes'
-              patch({
-                routerWifiEnabled: enabled,
-                wifiNetworks:
-                  enabled && wifiNetworks.length === 0
-                    ? [{ id: createRowId(), ssid: '', password: '' }]
-                    : wifiNetworks,
-              })
-            }}
-           disabled={readOnly}>
-            <option value="no">{t('common.no')}</option>
-            <option value="yes">{t('common.yes')}</option>
-          </select>
+        <div className="hw-subhead">
+          <span>{t('inspector.wifiNetworks')}</span>
         </div>
-
-        {wifiEnabled && (
-          <>
-            <div className="hw-subhead">
-              <span>{t('inspector.wifiNetworks')}</span>
+        <div className="hw-list">
+          {wifiNetworks.map((network, index) => {
+            const bound = dhcpSubnets.find((s) => s.id === network.dhcpSubnetId)
+            return (
+            <div className="hw-item" key={network.id}>
+              <div className="hw-row hw-row-labeled">
+                <label className="hw-inline-label">{t('inspector.ssid')}</label>
+                <input
+                  value={network.ssid}
+                  placeholder={`SSID ${index + 1}`}
+                  aria-label={t('inspector.ssid')}
+                  onChange={(event) =>
+                    updateNetwork(network.id, { ssid: event.target.value })
+                  }
+                 disabled={readOnly} />
+                {wifiNetworks.length > 1 && (
+                  <button
+                    type="button"
+                    className="hw-remove"
+                    onClick={() => removeNetwork(network.id)}
+                    title={t('inspector.removeNetwork')}
+                    aria-label={t('inspector.removeNetwork')}
+                   disabled={readOnly}>
+                    <Icon name="trash" size={13} />
+                  </button>
+                )}
+              </div>
+              <div className="hw-row hw-row-labeled">
+                <label className="hw-inline-label">{t('inspector.wifiPassword')}</label>
+                <input
+                  value={network.password}
+                  placeholder={t('inspector.wifiPassword')}
+                  aria-label={t('inspector.wifiPasswordAria')}
+                  onChange={(event) =>
+                    updateNetwork(network.id, { password: event.target.value })
+                  }
+                 disabled={readOnly} />
+                <button
+                  type="button"
+                  className="hw-copy-btn"
+                  onClick={() => void copyPassword(network.password)}
+                  title={t('inspector.copyPassword')}
+                  aria-label={t('inspector.copyPassword')}
+                  disabled={readOnly || !network.password}
+                >
+                  <Icon name="copy" size={13} />
+                </button>
+              </div>
+              <div className="hw-row hw-row-labeled">
+                <label className="hw-inline-label">{t('inspector.wifiDhcpSubnet')}</label>
+                <select
+                  aria-label={t('inspector.wifiDhcpSubnet')}
+                  value={network.dhcpSubnetId ?? ''}
+                  onChange={(event) =>
+                    updateNetwork(network.id, { dhcpSubnetId: event.target.value || undefined })
+                  }
+                  disabled={readOnly}
+                >
+                  <option value="">{t('inspector.noSubnetBinding')}</option>
+                  {dhcpSubnets.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.vlan !== '' ? `VLAN ${s.vlan} · ` : ''}{s.subnet || s.description || s.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {bound && (
+                <p className="hw-raid-hint">
+                  {t('inspector.wifiBoundToSubnet')}: {bound.vlan !== '' ? `VLAN ${bound.vlan} · ` : ''}{bound.subnet || bound.description || '—'}
+                </p>
+              )}
             </div>
-            <div className="hw-list">
-              {wifiNetworks.map((network, index) => (
-                <div className="hw-item" key={network.id}>
-                  <div className="hw-row">
-                    <input
-                      value={network.ssid}
-                      placeholder={`SSID ${index + 1}`}
-                      aria-label={t('inspector.ssid')}
-                      onChange={(event) =>
-                        updateNetwork(network.id, { ssid: event.target.value })
-                      }
-                     disabled={readOnly} />
-                    <button
-                      type="button"
-                      className="hw-remove"
-                      onClick={() => removeNetwork(network.id)}
-                      title={t('inspector.removeNetwork')}
-                      aria-label={t('inspector.removeNetwork')}
-                     disabled={readOnly}>
-                      <Icon name="trash" size={13} />
-                    </button>
-                  </div>
-                  <div className="hw-row is-sub">
-                    <input
-                      value={network.password}
-                      placeholder={t('inspector.wifiPassword')}
-                      aria-label={t('inspector.wifiPasswordAria')}
-                      onChange={(event) =>
-                        updateNetwork(network.id, { password: event.target.value })
-                      }
-                     disabled={readOnly} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
-              <Icon name="plus" size={13} />
-              {t('inspector.addWifiNetwork')}
-            </button>
-          </>
-        )}
+          )})}
+        </div>
+        <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
+          <Icon name="plus" size={13} />
+          {t('inspector.addWifiNetwork')}
+        </button>
       </div>
 
       <div className="hw-subsection">
@@ -1182,6 +1334,7 @@ function RouterSection({
             {t('inspector.addSubnet')}
           </button>
         </div>
+        <p className="hw-empty">{t('inspector.dhcpBinding')}: {t('inspector.wifiDhcpSubnet')}</p>
         {dhcpSubnets.length === 0 && (
           <p className="hw-empty">{t('inspector.addSubnetHint')}</p>
         )}
@@ -1238,11 +1391,276 @@ function RouterSection({
           ))}
         </div>
       </div>
+      </>)}
     </section>
   )
 }
 
-function PortsSection({ node, onUpdateNode, readOnly = false }: PortsSectionProps) {
+function RouterSection({
+  node,
+  onUpdateNode,
+  readOnly = false,
+  collapsed = false,
+  onToggle,
+}: {
+  node: DeviceNode
+  onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
+}) {
+  const { t } = useTranslation()
+  const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
+  const wifiEnabled = node.routerWifiEnabled ?? false
+  const wifiNetworks = node.wifiNetworks ?? []
+  const dhcpSubnets = node.routerDhcpSubnets ?? []
+
+  const updateNetwork = (id: string, value: Partial<WifiNetwork>) => {
+    patch({
+      wifiNetworks: wifiNetworks.map((item) =>
+        item.id === id ? { ...item, ...value } : item,
+      ),
+    })
+  }
+  const addNetwork = () => {
+    patch({
+      wifiNetworks: [
+        ...wifiNetworks,
+        { id: createRowId(), ssid: '', password: '' },
+      ],
+    })
+  }
+  const removeNetwork = (id: string) => {
+    const next = wifiNetworks.filter((item) => item.id !== id)
+    patch({ wifiNetworks: next })
+  }
+
+  const updateSubnet = (id: string, value: Partial<DhcpSubnet>) => {
+    patch({
+      routerDhcpSubnets: dhcpSubnets.map((item) =>
+        item.id === id ? { ...item, ...value } : item,
+      ),
+    })
+  }
+  const addSubnet = () => {
+    patch({
+      routerDhcpSubnets: [
+        ...dhcpSubnets,
+        { id: createRowId(), vlan: '', subnet: '', description: '' },
+      ],
+    })
+  }
+  const removeSubnet = (id: string) => {
+    patch({ routerDhcpSubnets: dhcpSubnets.filter((item) => item.id !== id) })
+  }
+
+  const head = onToggle ? (
+    <button type="button" className="hw-section-head is-toggle" onClick={onToggle}>
+      <span className="hw-section-title">{t('inspector.routerSettings')}</span>
+      <span className="hw-section-chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+    </button>
+  ) : (
+    <header className="hw-section-head">
+      <span className="hw-section-title">{t('inspector.routerSettings')}</span>
+    </header>
+  )
+
+  return (
+    <section className={`hw-section ${collapsed ? 'is-collapsed' : ''}`}>
+      {head}
+      {!collapsed && (<>
+
+      <div className="hw-subsection">
+        <div className="field">
+          <label className="field-label" htmlFor="router-wifi-enabled">
+            {t('inspector.wifi')}
+          </label>
+          <select
+            id="router-wifi-enabled"
+            value={wifiEnabled ? 'yes' : 'no'}
+            onChange={(event) => {
+              const enabled = event.target.value === 'yes'
+              patch({
+                routerWifiEnabled: enabled,
+                wifiNetworks:
+                  enabled && wifiNetworks.length === 0
+                    ? [{ id: createRowId(), ssid: '', password: '' }]
+                    : wifiNetworks,
+              })
+            }}
+           disabled={readOnly}>
+            <option value="no">{t('common.no')}</option>
+            <option value="yes">{t('common.yes')}</option>
+          </select>
+        </div>
+
+        {wifiEnabled && (
+          <>
+            <div className="hw-subhead">
+              <span>{t('inspector.wifiNetworks')}</span>
+            </div>
+            <div className="hw-list">
+              {wifiNetworks.map((network, index) => {
+                const bound = dhcpSubnets.find((s) => s.id === network.dhcpSubnetId)
+                const copyPassword = async (password: string) => {
+                  try { await navigator.clipboard?.writeText(password ?? '') } catch { /* ignore */ }
+                }
+                return (
+                <div className="hw-item" key={network.id}>
+                  <div className="hw-row hw-row-labeled">
+                    <label className="hw-inline-label">{t('inspector.ssid')}</label>
+                    <input
+                      value={network.ssid}
+                      placeholder={`SSID ${index + 1}`}
+                      aria-label={t('inspector.ssid')}
+                      onChange={(event) =>
+                        updateNetwork(network.id, { ssid: event.target.value })
+                      }
+                     disabled={readOnly} />
+                    <button
+                      type="button"
+                      className="hw-remove"
+                      onClick={() => removeNetwork(network.id)}
+                      title={t('inspector.removeNetwork')}
+                      aria-label={t('inspector.removeNetwork')}
+                     disabled={readOnly}>
+                      <Icon name="trash" size={13} />
+                    </button>
+                  </div>
+                  <div className="hw-row hw-row-labeled">
+                    <label className="hw-inline-label">{t('inspector.wifiPassword')}</label>
+                    <input
+                      value={network.password}
+                      placeholder={t('inspector.wifiPassword')}
+                      aria-label={t('inspector.wifiPasswordAria')}
+                      onChange={(event) =>
+                        updateNetwork(network.id, { password: event.target.value })
+                      }
+                     disabled={readOnly} />
+                    <button
+                      type="button"
+                      className="hw-copy-btn"
+                      onClick={() => void copyPassword(network.password)}
+                      title={t('inspector.copyPassword')}
+                      aria-label={t('inspector.copyPassword')}
+                      disabled={readOnly || !network.password}
+                    >
+                      <Icon name="copy" size={13} />
+                    </button>
+                  </div>
+                  <div className="hw-row hw-row-labeled">
+                    <label className="hw-inline-label">{t('inspector.wifiDhcpSubnet')}</label>
+                    <select
+                      aria-label={t('inspector.wifiDhcpSubnet')}
+                      value={network.dhcpSubnetId ?? ''}
+                      onChange={(event) =>
+                        updateNetwork(network.id, { dhcpSubnetId: event.target.value || undefined })
+                      }
+                      disabled={readOnly}
+                    >
+                      <option value="">{t('inspector.noSubnetBinding')}</option>
+                      {dhcpSubnets.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.vlan !== '' ? `VLAN ${s.vlan} · ` : ''}{s.subnet || s.description || s.id}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {bound && (
+                    <p className="hw-raid-hint">
+                      {t('inspector.wifiBoundToSubnet')}: {bound.vlan !== '' ? `VLAN ${bound.vlan} · ` : ''}{bound.subnet || bound.description || '—'}
+                    </p>
+                  )}
+                </div>
+              )})}
+            </div>
+            <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
+              <Icon name="plus" size={13} />
+              {t('inspector.addWifiNetwork')}
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="hw-subsection">
+        <div className="hw-subhead">
+          <span>{t('inspector.dhcpSubnets')}</span>
+          <button type="button" className="hw-add" onClick={addSubnet} disabled={readOnly}>
+            <Icon name="plus" size={13} />
+            {t('inspector.addSubnet')}
+          </button>
+        </div>
+        <p className="hw-empty">{t('inspector.dhcpBinding')}: {t('inspector.wifiDhcpSubnet')}</p>
+        {dhcpSubnets.length === 0 && (
+          <p className="hw-empty">{t('inspector.addSubnetHint')}</p>
+        )}
+        <div className="hw-list">
+          {dhcpSubnets.map((subnet) => (
+            <div className="hw-item" key={subnet.id}>
+              <div className="hw-row">
+                <input
+                  type="number"
+                  min={1}
+                  max={4094}
+                  value={subnet.vlan}
+                  placeholder={t('inspector.vlanNumber')}
+                  aria-label={t('inspector.vlanNumber')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, {
+                      vlan:
+                        event.target.value === ''
+                          ? ''
+                          : Math.max(1, Number(event.target.value)),
+                    })
+                  }
+                 disabled={readOnly} />
+                <input
+                  className="mono-input"
+                  value={subnet.subnet}
+                  placeholder="192.168.10.0/24"
+                  aria-label={t('inspector.dhcpNetwork')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, { subnet: event.target.value })
+                  }
+                 disabled={readOnly} />
+                <button
+                  type="button"
+                  className="hw-remove"
+                  onClick={() => removeSubnet(subnet.id)}
+                  title={t('inspector.removeSubnet')}
+                  aria-label={t('inspector.removeSubnet')}
+                 disabled={readOnly}>
+                  <Icon name="trash" size={13} />
+                </button>
+              </div>
+              <div className="hw-row is-sub">
+                <input
+                  value={subnet.description}
+                  placeholder={t('inspector.subnetDescription')}
+                  aria-label={t('inspector.subnetDescription')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, { description: event.target.value })
+                  }
+                 disabled={readOnly} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      </>)}
+    </section>
+  )
+}
+
+interface PortsSectionProps {
+  node: DeviceNode
+  onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
+  collapsed?: boolean
+  onToggle?: () => void
+}
+
+function PortsSection({ node, onUpdateNode, readOnly = false, collapsed = false, onToggle }: PortsSectionProps) {
   const { t, i18n } = useTranslation()
   const ports = node.ports ?? []
   const patch = (next: PortGroup[]) => onUpdateNode(node.id, { ports: next })
@@ -1287,13 +1705,25 @@ function PortsSection({ node, onUpdateNode, readOnly = false }: PortsSectionProp
     })
   }
 
-  return (
-    <section className="hw-section">
-      <header className="hw-section-head">
-        <span className="hw-section-title">{title}</span>
+  const head = onToggle ? (
+    <button type="button" className="hw-section-head is-toggle" onClick={onToggle}>
+      <span className="hw-section-title">{title}</span>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>
         <span className="hw-section-hint">{summary}</span>
-      </header>
+        <span className="hw-section-chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+      </span>
+    </button>
+  ) : (
+    <header className="hw-section-head">
+      <span className="hw-section-title">{title}</span>
+      <span className="hw-section-hint">{summary}</span>
+    </header>
+  )
 
+  return (
+    <section className={`hw-section ${collapsed ? 'is-collapsed' : ''}`}>
+      {head}
+      {!collapsed && (<>
       <p className="hw-empty">
         {t('inspector.portsHint')}
       </p>
@@ -1379,6 +1809,7 @@ function PortsSection({ node, onUpdateNode, readOnly = false }: PortsSectionProp
         <Icon name="plus" size={13} />
         {t('inspector.addPorts')}
       </button>
+      </>)}
     </section>
   )
 }
@@ -1833,6 +2264,31 @@ function EmptyInspector({
           <span>{t('inspector.shortcutScale')}</span>
           <kbd>Ctrl + Wheel</kbd>
         </div>
+      </div>
+
+      <div className="field link-legend-field">
+        <span className="field-label">{t('inspector.linkLegend')}</span>
+        <ul className="member-list link-legend">
+          {LINK_KINDS.map((kind) => (
+            <li key={kind}>
+              <div className="member-row is-legend">
+                <span className="link-legend-swatch" aria-hidden="true">
+                  <span
+                    className="link-legend-line"
+                    style={{
+                      background: LINK_META[kind].color,
+                      borderTop: LINK_META[kind].dash ? `2px dashed ${LINK_META[kind].color}` : undefined,
+                      height: LINK_META[kind].dash ? 0 : 2,
+                    }}
+                  />
+                </span>
+                <span className="member-text">
+                  <strong>{t(`links.${kind}`, { defaultValue: LINK_META[kind].label })}</strong>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="inspector-tip">

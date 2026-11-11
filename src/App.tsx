@@ -193,8 +193,11 @@ function parseNode(value: unknown): DeviceNode | null {
         id: typeof item.id === 'string' ? item.id : createId(),
         ssid: typeof item.ssid === 'string' ? item.ssid : '',
         password: typeof item.password === 'string' ? item.password : '',
+        ...(typeof item.dhcpSubnetId === 'string' && item.dhcpSubnetId
+          ? { dhcpSubnetId: item.dhcpSubnetId }
+          : {}),
       }))
-      .filter((item) => item.ssid || item.password || item.id)
+      .filter((item) => item.ssid || item.password || item.id || item.dhcpSubnetId)
     if (wifiNetworks.length > 0) node.wifiNetworks = wifiNetworks
   }
   if (node.kind === 'ap' && !node.wifiNetworks) {
@@ -205,6 +208,26 @@ function parseNode(value: unknown): DeviceNode | null {
   }
   if (typeof record.apDhcpNetwork === 'string') {
     node.apDhcpNetwork = record.apDhcpNetwork
+  }
+  if (Array.isArray(record.apDhcpSubnets)) {
+    const apDhcpSubnets = record.apDhcpSubnets
+      .filter(isRecord)
+      .map((item) => {
+        const vlan =
+          typeof item.vlan === 'number' && Number.isFinite(item.vlan)
+            ? Math.round(item.vlan)
+            : ('' as const)
+        return {
+          id: typeof item.id === 'string' ? item.id : createId(),
+          vlan,
+          subnet: typeof item.subnet === 'string' ? item.subnet : '',
+          description:
+            typeof item.description === 'string' ? item.description : '',
+        }
+      })
+    if (apDhcpSubnets.length > 0) node.apDhcpSubnets = apDhcpSubnets
+  } else if (node.apDhcpEnabled && node.apDhcpNetwork) {
+    node.apDhcpSubnets = [{ id: createId(), vlan: '', subnet: node.apDhcpNetwork, description: '' }]
   }
   if (typeof record.routerWifiEnabled === 'boolean') {
     node.routerWifiEnabled = record.routerWifiEnabled
@@ -571,8 +594,7 @@ function App() {
         ...(kind === 'ap'
           ? {
               wifiNetworks: [{ id: createId(), ssid: '', password: '' }],
-              apDhcpEnabled: false,
-              apDhcpNetwork: '',
+              apDhcpSubnets: [],
             }
           : {}),
         ...(kind === 'router'
@@ -683,6 +705,7 @@ function App() {
         raids: source.raids?.map((raid) => ({ ...raid })),
         ports: source.ports?.map((port) => ({ ...port })),
         wifiNetworks: source.wifiNetworks?.map((w) => ({ ...w, id: createId() })),
+        apDhcpSubnets: source.apDhcpSubnets?.map((s) => ({ ...s, id: createId() })),
         routerDhcpSubnets: source.routerDhcpSubnets?.map((s) => ({ ...s, id: createId() })),
       }
       setDiagram((current) => {
@@ -705,7 +728,7 @@ function App() {
   )
 
   const addConnection = useCallback(
-    (from: string, to: string) => {
+    (from: string, to: string, kind: LinkKind = 'ethernet') => {
       if (readOnly || from === to || !diagram) return
       const exists = diagram.connections.some(
         (link) =>
@@ -714,19 +737,18 @@ function App() {
       )
       if (exists) return
       const id = createId()
+      const base: Connection = { id, from, to, kind, label: '' }
+      if (kind === 'vpn') base.vpnProtocol = 'wireguard'
       setDiagram((current) => {
         if (!current) return current
         return {
           ...current,
-          connections: [
-            ...current.connections,
-            { id, from, to, kind: 'ethernet', label: '' },
-          ],
+          connections: [...current.connections, base],
         }
       })
       setSelection({ type: 'link', id })
     },
-    [diagram],
+    [diagram, readOnly],
   )
 
   const updateLink = useCallback(
@@ -1462,12 +1484,15 @@ function App() {
                 selectedNodes={selectedNodes}
                 selectedGroupsList={selectedGroupsList}
                 groups={groups}
+                nodes={nodes}
+                connections={connections}
                 nodeCount={nodes.length}
                 linkCount={connections.length}
                 groupCount={groups.length}
                 onUpdateNode={updateNode}
                 onDeleteNode={deleteNode}
                 onDuplicateNode={duplicateNode}
+                onAddConnection={addConnection}
                 onUpdateLink={updateLink}
                 onDeleteLink={deleteLink}
                 onUpdateGroup={updateGroup}
@@ -1476,6 +1501,7 @@ function App() {
                 onSelectNodes={selectNodes}
                 onDeleteNodes={deleteNodes}
                 onUngroup={ungroup}
+                onSelect={setSelection}
                 onClose={() => setSelection(null)}
                 onHidePanel={() => setShowInspector(false)}
                 readOnly={readOnly}

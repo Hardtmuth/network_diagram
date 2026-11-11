@@ -78,6 +78,7 @@ export interface WifiNetwork {
   id: string
   ssid: string
   password: string
+  dhcpSubnetId?: string
 }
 
 export interface DeviceNode {
@@ -95,6 +96,7 @@ export interface DeviceNode {
   wifiNetworks?: WifiNetwork[]
   apDhcpEnabled?: boolean
   apDhcpNetwork?: string
+  apDhcpSubnets?: DhcpSubnet[]
   routerWifiEnabled?: boolean
   routerDhcpSubnets?: DhcpSubnet[]
   ispConnectionType?: IspConnectionType

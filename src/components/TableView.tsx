@@ -134,7 +134,8 @@ export function TableView({
     }
     if (node.kind === 'ap') {
       parts.push(`Wi-Fi: ${node.wifiNetworks?.length ?? 0} SSID`)
-      if (node.apDhcpEnabled) parts.push(`DHCP: ${node.apDhcpNetwork || t('common.yes')}`)
+      const apSubnets = node.apDhcpSubnets ?? (node.apDhcpEnabled && node.apDhcpNetwork ? [1] : [])
+      if (apSubnets.length > 0) parts.push(`DHCP: ${apSubnets.length}`)
     }
     return parts.join(' | ') || '—'
   }

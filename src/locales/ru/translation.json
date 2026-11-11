@@ -254,7 +254,21 @@
     "recorder": {
       "dvr": "DVR",
       "nvr": "NVR"
-    }
+    },
+    "linkLegend": "Типы связей",
+    "connectionsOfNode": "Связи устройства",
+    "noConnections": "Нет связей",
+    "createConnection": "Создать связь",
+    "selectDevice": "Выберите устройство",
+    "addConnection": "Добавить связь",
+    "apSettings": "Точка доступа: Wi-Fi и DHCP",
+    "dhcpBinding": "Привязка DHCP",
+    "ownDhcpServer": "Собственный DHCP",
+    "externalDhcp": "Внешний DHCP-сервер",
+    "noSubnetBinding": "Не привязана к подсети",
+    "wifiDhcpSubnet": "DHCP / подсеть",
+    "wifiBoundToSubnet": "Привязана к подсети",
+    "copyPassword": "Скопировать пароль"
   },
   "toast": {
     "diagramDeleted": "Схема удалена",

@@ -254,7 +254,21 @@
     "recorder": {
       "dvr": "DVR",
       "nvr": "NVR"
-    }
+    },
+    "linkLegend": "Connection types",
+    "connectionsOfNode": "Device connections",
+    "noConnections": "No connections",
+    "createConnection": "Create connection",
+    "selectDevice": "Select device",
+    "addConnection": "Add connection",
+    "apSettings": "Access point: Wi-Fi & DHCP",
+    "dhcpBinding": "DHCP binding",
+    "ownDhcpServer": "Own DHCP",
+    "externalDhcp": "External DHCP server",
+    "noSubnetBinding": "Not bound to a subnet",
+    "wifiDhcpSubnet": "DHCP / subnet",
+    "wifiBoundToSubnet": "Bound to subnet",
+    "copyPassword": "Copy password"
   },
   "toast": {
     "diagramDeleted": "Diagram deleted",
