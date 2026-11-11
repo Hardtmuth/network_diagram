@@ -50,7 +50,9 @@
     "clearCanvas": "Очистить холст",
     "language": "Язык",
     "viewMode": "Только просмотр",
-    "editMode": "Режим изменения"
+    "editMode": "Режим изменения",
+    "tableView": "Таблица",
+    "diagramView": "Схема"
   },
   "dashboard": {
     "title": "Личный кабинет",
@@ -427,6 +429,18 @@
       "label": "SFP / SFP+",
       "short": "SFP"
     }
+  },
+  "table": {
+    "details": "Модель / сервис",
+    "config": "Конфигурация",
+    "actions": "Действия",
+    "showOnDiagram": "Показать на схеме",
+    "empty": "Нет данных для отображения",
+    "filteredBy": "Фильтр: «{{query}}»",
+    "from": "Откуда",
+    "to": "Куда",
+    "membersCount": "Устройств",
+    "members": "Состав группы"
   },
   "defaults": {
     "myNetwork": "Моя сеть",

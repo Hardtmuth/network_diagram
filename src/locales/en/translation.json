@@ -50,7 +50,9 @@
     "clearCanvas": "Clear canvas",
     "language": "Language",
     "viewMode": "View only",
-    "editMode": "Edit mode"
+    "editMode": "Edit mode",
+    "tableView": "Table",
+    "diagramView": "Diagram"
   },
   "dashboard": {
     "title": "Personal cabinet",
@@ -427,6 +429,18 @@
       "label": "SFP / SFP+",
       "short": "SFP"
     }
+  },
+  "table": {
+    "details": "Model / service",
+    "config": "Configuration",
+    "actions": "Actions",
+    "showOnDiagram": "Show on diagram",
+    "empty": "No data to display",
+    "filteredBy": "Filter: \"{{query}}\"",
+    "from": "From",
+    "to": "To",
+    "membersCount": "Devices",
+    "members": "Members"
   },
   "defaults": {
     "myNetwork": "My network",

@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard'
 import { Icon } from './components/Icons'
 import { Inspector } from './components/Inspector'
 import { Sidebar } from './components/Sidebar'
+import { TableView } from './components/TableView'
 import { createDemoDiagram } from './demo'
 import {
   DEVICE_META,
@@ -365,6 +366,7 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(true)
   const [showInspector, setShowInspector] = useState(true)
   const [readOnly, setReadOnly] = useState(false)
+  const [editorView, setEditorView] = useState<'diagram' | 'table'>('diagram')
   const canvasRef = useRef<CanvasHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importTargetRef = useRef<'dashboard' | 'editor'>('dashboard')
@@ -1228,6 +1230,21 @@ function App() {
 
               <button
                 type="button"
+                className={`action-button ${editorView === 'table' ? 'is-active' : ''}`}
+                onClick={() =>
+                  setEditorView((value) => (value === 'diagram' ? 'table' : 'diagram'))
+                }
+                title={editorView === 'diagram' ? t('topbar.tableView') : t('topbar.diagramView')}
+                aria-label={editorView === 'diagram' ? t('topbar.tableView') : t('topbar.diagramView')}
+              >
+                <Icon name={editorView === 'diagram' ? 'group' : 'topology'} size={15} />
+                <span className="action-label">
+                  {editorView === 'diagram' ? t('topbar.tableView') : t('topbar.diagramView')}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className={`action-button ${readOnly ? 'is-active' : ''}`}
                 onClick={() => setReadOnly((value) => !value)}
                 title={readOnly ? t('topbar.editMode') : t('topbar.viewMode')}
@@ -1348,26 +1365,56 @@ function App() {
           </header>
 
           <main className="workspace">
-            {showSidebar && (
+            {showSidebar && editorView === 'diagram' && (
               <Sidebar
                 onQuickAdd={(kind) => canvasRef.current?.addAtCenter(kind)}
                 onHide={() => setShowSidebar(false)}
                 readOnly={readOnly}
               />
             )}
-            <Canvas
-              ref={canvasRef}
-              nodes={nodes}
-              connections={connections}
-              groups={groups}
-              selection={selection}
-              onSelect={setSelection}
-              onAddNode={addNode}
-              onMoveNode={moveNode}
-              onMoveNodes={moveNodes}
-              onConnect={addConnection}
-              readOnly={readOnly}
-            />
+            {editorView === 'diagram' ? (
+              <Canvas
+                ref={canvasRef}
+                nodes={nodes}
+                connections={connections}
+                groups={groups}
+                selection={selection}
+                onSelect={setSelection}
+                onAddNode={addNode}
+                onMoveNode={moveNode}
+                onMoveNodes={moveNodes}
+                onConnect={addConnection}
+                readOnly={readOnly}
+              />
+            ) : (
+              <TableView
+                nodes={nodes}
+                connections={connections}
+                groups={groups}
+                selection={selection}
+                searchQuery={searchQuery}
+                readOnly={readOnly}
+                onSelect={setSelection}
+                onDeleteNode={deleteNode}
+                onDeleteLink={deleteLink}
+                onUngroup={ungroup}
+                onShowOnDiagram={(sel) => {
+                  if (!sel) return
+                  setSelection(sel)
+                  setEditorView('diagram')
+                  requestAnimationFrame(() => {
+                    if (sel.type === 'node') {
+                      canvasRef.current?.centerOnNode(sel.id)
+                    } else if (sel.type === 'nodes') {
+                      const id = sel.ids[0]
+                      if (id) canvasRef.current?.centerOnNode(id)
+                    } else {
+                      canvasRef.current?.fitView()
+                    }
+                  })
+                }}
+              />
+            )}
             {showInspector && (
               <Inspector
                 node={selectedNode}
