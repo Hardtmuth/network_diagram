@@ -8,9 +8,10 @@ import { Icon } from './Icons'
 interface SidebarProps {
   onQuickAdd: (kind: DeviceKind) => void
   onHide: () => void
+  readOnly?: boolean
 }
 
-export function Sidebar({ onQuickAdd, onHide }: SidebarProps) {
+export function Sidebar({ onQuickAdd, onHide, readOnly = false }: SidebarProps) {
   const { t } = useTranslation()
 
   const deviceLabel = (kind: DeviceKind) =>
@@ -24,6 +25,10 @@ export function Sidebar({ onQuickAdd, onHide }: SidebarProps) {
   }
 
   const handleDragStart = (event: DragEvent<HTMLButtonElement>, kind: DeviceKind) => {
+    if (readOnly) {
+      event.preventDefault()
+      return
+    }
     const label = deviceLabel(kind)
     event.dataTransfer.setData(DND_MIME, kind)
     event.dataTransfer.setData('text/plain', label)
@@ -63,9 +68,12 @@ export function Sidebar({ onQuickAdd, onHide }: SidebarProps) {
                   type="button"
                   key={kind}
                   className="shelf-item"
-                  draggable
+                  draggable={!readOnly}
+                  disabled={readOnly}
                   onDragStart={(event) => handleDragStart(event, kind)}
-                  onClick={() => onQuickAdd(kind)}
+                  onClick={() => {
+                    if (!readOnly) onQuickAdd(kind)
+                  }}
                   title={t('sidebar.addTitle', { label })}
                   style={{ '--device-color': meta.color } as CSSProperties}
                 >

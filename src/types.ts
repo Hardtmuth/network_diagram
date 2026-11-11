@@ -14,6 +14,8 @@ export type DeviceKind =
   | 'isp'
   | 'usb'
   | 'nettop'
+  | 'sbc'
+  | 'ups'
   | 'printer3d'
   | 'other'
 
@@ -34,6 +36,17 @@ export type RaidLevel =
 export type PortType = 'ethernet' | 'sfp'
 
 export type PrinterInterface = 'usb' | 'ethernet' | 'wifi'
+
+export type IspConnectionType = 'pppoe' | 'static' | 'dhcp'
+
+export type MobileOs = 'android' | 'ios'
+
+export interface DhcpSubnet {
+  id: string
+  vlan: number | ''
+  subnet: string
+  description: string
+}
 
 export interface DiskEntry {
   id: string
@@ -77,6 +90,11 @@ export interface DeviceNode {
   wifiNetworks?: WifiNetwork[]
   apDhcpEnabled?: boolean
   apDhcpNetwork?: string
+  routerWifiEnabled?: boolean
+  routerDhcpSubnets?: DhcpSubnet[]
+  ispConnectionType?: IspConnectionType
+  containerService?: string
+  mobileOs?: MobileOs
   cpu?: string
   cpuCores?: number
   ramGb?: number

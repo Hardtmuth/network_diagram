@@ -199,6 +199,40 @@ function parseNode(value: unknown): DeviceNode | null {
   if (typeof record.apDhcpNetwork === 'string') {
     node.apDhcpNetwork = record.apDhcpNetwork
   }
+  if (typeof record.routerWifiEnabled === 'boolean') {
+    node.routerWifiEnabled = record.routerWifiEnabled
+  }
+  if (Array.isArray(record.routerDhcpSubnets)) {
+    const routerDhcpSubnets = record.routerDhcpSubnets
+      .filter(isRecord)
+      .map((item) => {
+        const vlan =
+          typeof item.vlan === 'number' && Number.isFinite(item.vlan)
+            ? Math.round(item.vlan)
+            : ('' as const)
+        return {
+          id: typeof item.id === 'string' ? item.id : createId(),
+          vlan,
+          subnet: typeof item.subnet === 'string' ? item.subnet : '',
+          description:
+            typeof item.description === 'string' ? item.description : '',
+        }
+      })
+    if (routerDhcpSubnets.length > 0) node.routerDhcpSubnets = routerDhcpSubnets
+  }
+  if (
+    record.ispConnectionType === 'pppoe' ||
+    record.ispConnectionType === 'static' ||
+    record.ispConnectionType === 'dhcp'
+  ) {
+    node.ispConnectionType = record.ispConnectionType
+  }
+  if (typeof record.containerService === 'string') {
+    node.containerService = record.containerService
+  }
+  if (record.mobileOs === 'android' || record.mobileOs === 'ios') {
+    node.mobileOs = record.mobileOs
+  }
 
   if (typeof record.cpu === 'string' && record.cpu.trim()) {
     node.cpu = record.cpu
@@ -330,6 +364,7 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [showInspector, setShowInspector] = useState(true)
+  const [readOnly, setReadOnly] = useState(false)
   const canvasRef = useRef<CanvasHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importTargetRef = useRef<'dashboard' | 'editor'>('dashboard')
@@ -503,6 +538,7 @@ function App() {
   }, [activeId, diagram, view])
 
   const addNode = useCallback((kind: DeviceKind, x: number, y: number) => {
+    if (readOnly) return
     const id = createId()
     setDiagram((current) => {
       if (!current) return current
@@ -516,7 +552,7 @@ function App() {
         y,
         name: sameKind === 0 ? label : `${label} ${sameKind + 1}`,
         model: '',
-        ...(kind === 'usb' ? {} : { ip: '', mac: '' }),
+        ...(kind === 'usb' || kind === 'ups' ? {} : { ip: '', mac: '' }),
         ...(kind === 'printer' ? { printerInterface: 'ethernet' as const } : {}),
         ...(kind === 'ap'
           ? {
@@ -525,6 +561,12 @@ function App() {
               apDhcpNetwork: '',
             }
           : {}),
+        ...(kind === 'router'
+          ? { routerWifiEnabled: false, routerDhcpSubnets: [], wifiNetworks: [] }
+          : {}),
+        ...(kind === 'isp' ? { ispConnectionType: 'pppoe' as const, ip: '' } : {}),
+        ...(kind === 'container' ? { containerService: '' } : {}),
+        ...(kind === 'mobile' ? { mobileOs: 'android' as const, os: 'Android' } : {}),
         notes: '',
       }
       return { ...current, nodes: [...current.nodes, node] }
@@ -533,6 +575,7 @@ function App() {
   }, [])
 
   const moveNode = useCallback((id: string, x: number, y: number) => {
+    if (readOnly) return
     setDiagram((current) => {
       if (!current) return current
       const index = current.nodes.findIndex((node) => node.id === id)
@@ -547,6 +590,7 @@ function App() {
 
   const moveNodes = useCallback(
     (moves: { id: string; x: number; y: number }[]) => {
+      if (readOnly) return
       setDiagram((current) => {
         if (!current) return current
         const movesById = new Map(moves.map((move) => [move.id, move]))
@@ -566,6 +610,7 @@ function App() {
 
   const updateNode = useCallback(
     (id: string, patch: Partial<DeviceNode>) => {
+      if (readOnly) return
       setDiagram((current) => {
         if (!current) return current
         return {
@@ -580,6 +625,7 @@ function App() {
   )
 
   const deleteNodes = useCallback((ids: string[]) => {
+    if (readOnly) return
     const idSet = new Set(ids)
     setDiagram((current) => {
       if (!current) return current
@@ -607,7 +653,7 @@ function App() {
 
   const duplicateNode = useCallback(
     (id: string) => {
-      if (!diagram) return
+      if (readOnly || !diagram) return
       const source = diagram.nodes.find((node) => node.id === id)
       if (!source) return
       const newId = createId()
@@ -622,6 +668,7 @@ function App() {
         raids: source.raids?.map((raid) => ({ ...raid })),
         ports: source.ports?.map((port) => ({ ...port })),
         wifiNetworks: source.wifiNetworks?.map((w) => ({ ...w, id: createId() })),
+        routerDhcpSubnets: source.routerDhcpSubnets?.map((s) => ({ ...s, id: createId() })),
       }
       setDiagram((current) => {
         if (!current) return current
@@ -644,7 +691,7 @@ function App() {
 
   const addConnection = useCallback(
     (from: string, to: string) => {
-      if (from === to || !diagram) return
+      if (readOnly || from === to || !diagram) return
       const exists = diagram.connections.some(
         (link) =>
           (link.from === from && link.to === to) ||
@@ -669,6 +716,7 @@ function App() {
 
   const updateLink = useCallback(
     (id: string, patch: Partial<Connection>) => {
+      if (readOnly) return
       setDiagram((current) => {
         if (!current) return current
         return {
@@ -683,6 +731,7 @@ function App() {
   )
 
   const deleteLink = useCallback((id: string) => {
+    if (readOnly) return
     setDiagram((current) => {
       if (!current) return current
       return {
@@ -694,6 +743,7 @@ function App() {
   }, [])
 
   const createGroup = useCallback((ids: string[]) => {
+    if (readOnly) return
     const uniqueIds = [...new Set(ids)]
     if (uniqueIds.length < 2) return
     const id = createId()
@@ -720,6 +770,7 @@ function App() {
 
   const updateGroup = useCallback(
     (id: string, patch: Partial<DeviceGroup>) => {
+      if (readOnly) return
       setDiagram((current) => {
         if (!current) return current
         return {
@@ -734,6 +785,7 @@ function App() {
   )
 
   const ungroup = useCallback((id: string) => {
+    if (readOnly) return
     setDiagram((current) => {
       if (!current) return current
       return {
@@ -747,6 +799,7 @@ function App() {
 
   const assignNodeToGroup = useCallback(
     (nodeId: string, groupId: string | null) => {
+      if (readOnly) return
       setDiagram((current) => {
         if (!current) return current
         return {
@@ -784,7 +837,7 @@ function App() {
   )
 
   const deleteSelection = useCallback(() => {
-    if (!selection) return
+    if (readOnly || !selection) return
     if (selection.type === 'node') {
       deleteNodes([selection.id])
       return
@@ -801,6 +854,7 @@ function App() {
   }, [deleteLink, deleteNodes, selection, ungroup])
 
   const clearCanvas = () => {
+    if (readOnly) return
     if (!window.confirm(t('confirm.clearCanvas'))) {
       return
     }
@@ -813,7 +867,7 @@ function App() {
   }
 
   const loadExample = () => {
-    if (!diagram) return
+    if (readOnly || !diagram) return
     const hasContent =
       diagram.nodes.length > 0 || diagram.connections.length > 0 || diagram.groups.length > 0
     if (
@@ -917,6 +971,7 @@ function App() {
   }
 
   const openImport = (target: 'dashboard' | 'editor') => {
+    if (readOnly && target === 'editor') return
     importTargetRef.current = target
     fileInputRef.current?.click()
   }
@@ -929,6 +984,10 @@ function App() {
       const parsed = parseDiagram(JSON.parse(text) as unknown)
       if (!parsed) throw new Error('Invalid diagram')
       if (view === 'editor' && activeId && importTargetRef.current === 'editor') {
+        if (readOnly) {
+          setToast(t('toast.importFailed'))
+          return
+        }
         setDiagram(parsed)
         setSelection(null)
         setToast(t('toast.importLoaded'))
@@ -987,7 +1046,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [deleteSelection, duplicateNode, selection, view])
+  }, [deleteSelection, duplicateNode, readOnly, selection, view])
 
   const nodes = diagram?.nodes ?? []
   const connections = diagram?.connections ?? []
@@ -1169,6 +1228,18 @@ function App() {
 
               <button
                 type="button"
+                className={`action-button ${readOnly ? 'is-active' : ''}`}
+                onClick={() => setReadOnly((value) => !value)}
+                title={readOnly ? t('topbar.editMode') : t('topbar.viewMode')}
+                aria-label={readOnly ? t('topbar.editMode') : t('topbar.viewMode')}
+              >
+                <span className="action-label">
+                  {readOnly ? t('topbar.editMode') : t('topbar.viewMode')}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className="action-button"
                 onClick={() => i18n.changeLanguage(i18n.resolvedLanguage === 'ru' ? 'en' : 'ru')}
                 title={t('topbar.language')}
@@ -1204,6 +1275,7 @@ function App() {
                 className="action-button"
                 onClick={loadExample}
                 title={t('topbar.loadExample')}
+                disabled={readOnly}
               >
                 <Icon name="sparkles" size={15} />
                 <span className="action-label">{t('common.example')}</span>
@@ -1214,6 +1286,7 @@ function App() {
                 className="action-button"
                 onClick={() => openImport('editor')}
                 title={t('topbar.importJson')}
+                disabled={readOnly}
               >
                 <Icon name="upload" size={15} />
                 <span className="action-label">{t('common.import')}</span>
@@ -1266,6 +1339,7 @@ function App() {
                 className="action-button is-danger"
                 onClick={clearCanvas}
                 title={t('topbar.clearCanvas')}
+                disabled={readOnly}
               >
                 <Icon name="trash" size={15} />
                 <span className="action-label">{t('common.clear')}</span>
@@ -1278,6 +1352,7 @@ function App() {
               <Sidebar
                 onQuickAdd={(kind) => canvasRef.current?.addAtCenter(kind)}
                 onHide={() => setShowSidebar(false)}
+                readOnly={readOnly}
               />
             )}
             <Canvas
@@ -1291,6 +1366,7 @@ function App() {
               onMoveNode={moveNode}
               onMoveNodes={moveNodes}
               onConnect={addConnection}
+              readOnly={readOnly}
             />
             {showInspector && (
               <Inspector
@@ -1319,6 +1395,7 @@ function App() {
                 onUngroup={ungroup}
                 onClose={() => setSelection(null)}
                 onHidePanel={() => setShowInspector(false)}
+                readOnly={readOnly}
               />
             )}
           </main>

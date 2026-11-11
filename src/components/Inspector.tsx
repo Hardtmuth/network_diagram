@@ -7,6 +7,7 @@ import {
   DISK_TYPE_META,
   GROUP_COLORS,
   HARDWARE_KINDS,
+  ISP_CONNECTION_TYPES,
   LINK_KINDS,
   LINK_META,
   OS_KINDS,
@@ -18,6 +19,7 @@ import {
   VPN_PROTOCOLS,
   VPN_PROTOCOL_META,
 } from '../devices'
+import { MOBILE_OS_PRESETS, OS_PRESETS, OsIcon, getOsPreset } from '../os'
 import {
   createRowId,
   diskTotalLabel,
@@ -34,9 +36,12 @@ import type {
   DeviceGroup,
   DeviceKind,
   DeviceNode,
+  DhcpSubnet,
   DiskEntry,
   DiskType,
+  IspConnectionType,
   LinkKind,
+  MobileOs,
   PortGroup,
   PortType,
   PrinterInterface,
@@ -74,6 +79,7 @@ interface InspectorProps {
   onUngroup: (id: string) => void
   onClose: () => void
   onHidePanel: () => void
+  readOnly?: boolean
 }
 
 export function Inspector({
@@ -102,6 +108,7 @@ export function Inspector({
   onUngroup,
   onClose,
   onHidePanel,
+  readOnly = false,
 }: InspectorProps) {
   const { t } = useTranslation()
   const hasSelection =
@@ -157,6 +164,7 @@ export function Inspector({
             onDeleteNode={onDeleteNode}
             onDuplicateNode={onDuplicateNode}
             onAssignGroup={onAssignGroup}
+            readOnly={readOnly}
           />
         )}
 
@@ -167,6 +175,7 @@ export function Inspector({
             linkTo={linkTo}
             onUpdateLink={onUpdateLink}
             onDeleteLink={onDeleteLink}
+            readOnly={readOnly}
           />
         )}
 
@@ -177,6 +186,7 @@ export function Inspector({
             onUpdateGroup={onUpdateGroup}
             onSelectNodes={onSelectNodes}
             onUngroup={onUngroup}
+            readOnly={readOnly}
           />
         )}
 
@@ -186,6 +196,7 @@ export function Inspector({
             onCreateGroup={onCreateGroup}
             onSelectNodes={onSelectNodes}
             onDeleteNodes={onDeleteNodes}
+            readOnly={readOnly}
           />
         )}
 
@@ -209,6 +220,7 @@ interface NodeFormProps {
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
   onAssignGroup: (nodeId: string, groupId: string | null) => void
+  readOnly?: boolean
 }
 
 function NodeForm({
@@ -219,6 +231,7 @@ function NodeForm({
   onDeleteNode,
   onDuplicateNode,
   onAssignGroup,
+  readOnly = false,
 }: NodeFormProps) {
   const { t } = useTranslation()
   const meta = DEVICE_META[node.kind]
@@ -252,7 +265,7 @@ function NodeForm({
           onChange={(event) =>
             onUpdateNode(node.id, { name: event.target.value })
           }
-        />
+         disabled={readOnly} />
       </div>
 
       <div className="field">
@@ -265,7 +278,7 @@ function NodeForm({
           onChange={(event) =>
             onUpdateNode(node.id, { kind: event.target.value as DeviceKind })
           }
-        >
+         disabled={readOnly}>
           {DEVICE_ORDER.map((kind) => (
             <option key={kind} value={kind}>
               {deviceLabel(kind)}
@@ -274,25 +287,87 @@ function NodeForm({
         </select>
       </div>
 
-      <div className="field">
-        <label className="field-label" htmlFor="node-model">
-          {t('inspector.nodeModel')}
-        </label>
-        <input
-          id="node-model"
-          value={node.model}
-          placeholder={t('inspector.nodeNamePlaceholder')}
-          onChange={(event) =>
-            onUpdateNode(node.id, { model: event.target.value })
-          }
-        />
-      </div>
+      {node.kind !== 'container' && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-model">
+            {t('inspector.nodeModel')}
+          </label>
+          <input
+            id="node-model"
+            value={node.model}
+            placeholder={t('inspector.nodeNamePlaceholder')}
+            onChange={(event) =>
+              onUpdateNode(node.id, { model: event.target.value })
+            }
+           disabled={readOnly} />
+        </div>
+      )}
+
+      {node.kind === 'isp' && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-isp-connection">
+            {t('inspector.ispConnectionType')}
+          </label>
+          <select
+            id="node-isp-connection"
+            value={node.ispConnectionType ?? 'pppoe'}
+            onChange={(event) =>
+              onUpdateNode(node.id, {
+                ispConnectionType: event.target.value as IspConnectionType,
+              })
+            }
+           disabled={readOnly}>
+            {ISP_CONNECTION_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {t(`inspector.isp.${type}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {node.kind === 'container' && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-service">
+            {t('inspector.containerService')}
+          </label>
+          <input
+            id="node-service"
+            value={node.containerService ?? ''}
+            placeholder={t('inspector.containerServicePlaceholder')}
+            onChange={(event) =>
+              onUpdateNode(node.id, { containerService: event.target.value })
+            }
+           disabled={readOnly} />
+          <span className="field-hint">
+            {t('inspector.containerServiceHint')}
+          </span>
+        </div>
+      )}
 
       {OS_KINDS.includes(node.kind) && (
         <div className="field">
           <label className="field-label" htmlFor="node-os">
             {t('inspector.nodeOs')}
           </label>
+          <div className="os-picker" role="group" aria-label={t('inspector.nodeOs')}>
+            {OS_PRESETS.map((preset) => {
+              const active = getOsPreset(node.os)?.id === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`os-preset ${active ? 'is-active' : ''}`}
+                  title={preset.label}
+                  aria-label={preset.label}
+                  aria-pressed={active}
+                  onClick={() => onUpdateNode(node.id, { os: preset.label })}
+                 disabled={readOnly}>
+                  <OsIcon os={preset.label} size={15} />
+                </button>
+              )
+            })}
+          </div>
           <input
             id="node-os"
             value={node.os ?? ''}
@@ -300,7 +375,51 @@ function NodeForm({
             onChange={(event) =>
               onUpdateNode(node.id, { os: event.target.value })
             }
-          />
+           disabled={readOnly} />
+        </div>
+      )}
+
+      {node.kind === 'mobile' && (
+        <div className="field">
+          <label className="field-label">{t('inspector.mobilePlatform')}</label>
+          <div className="os-picker" role="group" aria-label={t('inspector.mobilePlatform')}>
+            {MOBILE_OS_PRESETS.map((preset) => {
+              const active =
+                node.mobileOs === preset.id || getOsPreset(node.os)?.id === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`os-preset ${active ? 'is-active' : ''}`}
+                  title={preset.label}
+                  aria-label={preset.label}
+                  aria-pressed={active}
+                  onClick={() =>
+                    onUpdateNode(node.id, {
+                      mobileOs: preset.id as MobileOs,
+                      os: preset.label,
+                    })
+                  }
+                 disabled={readOnly}>
+                  <OsIcon os={preset.label} size={15} />
+                </button>
+              )
+            })}
+          </div>
+          <select
+            id="node-mobile-os"
+            value={node.mobileOs ?? (getOsPreset(node.os)?.id === 'ios' ? 'ios' : 'android')}
+            onChange={(event) => {
+              const mobileOs = event.target.value as MobileOs
+              onUpdateNode(node.id, {
+                mobileOs,
+                os: mobileOs === 'ios' ? 'iOS' : 'Android',
+              })
+            }}
+           disabled={readOnly}>
+            <option value="android">Android</option>
+            <option value="ios">iOS</option>
+          </select>
         </div>
       )}
 
@@ -317,7 +436,7 @@ function NodeForm({
                 printerInterface: event.target.value as PrinterInterface,
               })
             }
-          >
+           disabled={readOnly}>
             <option value="usb">{t('inspector.printerUsb')}</option>
             <option value="ethernet">{t('inspector.printerEthernet')}</option>
             <option value="wifi">{t('inspector.printerWifi')}</option>
@@ -325,7 +444,27 @@ function NodeForm({
         </div>
       )}
 
+      {node.kind === 'isp' && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-ip">
+            {t('inspector.nodeIp')}
+          </label>
+          <input
+            id="node-ip"
+            className="mono-input"
+            value={node.ip ?? ''}
+            placeholder="203.0.113.10"
+            spellCheck={false}
+            onChange={(event) =>
+              onUpdateNode(node.id, { ip: event.target.value })
+            }
+           disabled={readOnly} />
+        </div>
+      )}
+
       {node.kind !== 'usb' &&
+        node.kind !== 'isp' &&
+        node.kind !== 'ups' &&
         !(node.kind === 'printer' && (node.printerInterface ?? 'ethernet') === 'usb') && (
           <>
             <div className="field">
@@ -341,7 +480,7 @@ function NodeForm({
                 onChange={(event) =>
                   onUpdateNode(node.id, { ip: event.target.value })
                 }
-              />
+               disabled={readOnly} />
             </div>
 
             <div className="field">
@@ -357,21 +496,25 @@ function NodeForm({
                 onChange={(event) =>
                   onUpdateNode(node.id, { mac: event.target.value.toUpperCase() })
                 }
-              />
+               disabled={readOnly} />
             </div>
           </>
         )}
 
       {HARDWARE_KINDS.includes(node.kind) && (
-        <HardwareSection node={node} onUpdateNode={onUpdateNode} />
+        <HardwareSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
       )}
 
       {PORT_KINDS.includes(node.kind) && (
-        <PortsSection node={node} onUpdateNode={onUpdateNode} />
+        <PortsSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
       )}
 
       {node.kind === 'ap' && (
-        <AccessPointSection node={node} onUpdateNode={onUpdateNode} />
+        <AccessPointSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
+      )}
+
+      {node.kind === 'router' && (
+        <RouterSection node={node} onUpdateNode={onUpdateNode} readOnly={readOnly} />
       )}
 
       <div className="field">
@@ -386,7 +529,7 @@ function NodeForm({
           onChange={(event) =>
             onUpdateNode(node.id, { notes: event.target.value })
           }
-        />
+         disabled={readOnly} />
       </div>
 
       <div className="field">
@@ -399,7 +542,7 @@ function NodeForm({
           onChange={(event) =>
             onAssignGroup(node.id, event.target.value || null)
           }
-        >
+         disabled={readOnly}>
           <option value="">{t('inspector.noGroup')}</option>
           {groups.map((item) => (
             <option key={item.id} value={item.id}>
@@ -417,7 +560,7 @@ function NodeForm({
           type="button"
           className="secondary-button"
           onClick={() => onDuplicateNode(node.id)}
-        >
+         disabled={readOnly}>
           <Icon name="copy" size={15} />
           {t('inspector.duplicateDevice')}
         </button>
@@ -425,7 +568,7 @@ function NodeForm({
           type="button"
           className="danger-button"
           onClick={() => onDeleteNode(node.id)}
-        >
+         disabled={readOnly}>
           <Icon name="trash" size={15} />
           {t('common.delete')}
         </button>
@@ -450,9 +593,10 @@ function clampPort(value: number) {
 interface HardwareSectionProps {
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
 }
 
-function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
+function HardwareSection({ node, onUpdateNode, readOnly = false }: HardwareSectionProps) {
   const { t, i18n } = useTranslation()
   const disks = node.disks ?? []
   const raids = node.raids ?? []
@@ -540,7 +684,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
             value={node.cpu ?? ''}
             placeholder={t('inspector.cpuPlaceholder')}
             onChange={(event) => patch({ cpu: event.target.value })}
-          />
+           disabled={readOnly} />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="node-cores">
@@ -556,7 +700,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
             onChange={(event) =>
               patch({ cpuCores: numberFromInput(event.target.value) })
             }
-          />
+           disabled={readOnly} />
         </div>
         <div className="field">
           <label className="field-label" htmlFor="node-ram">
@@ -572,14 +716,14 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
             onChange={(event) =>
               patch({ ramGb: numberFromInput(event.target.value) })
             }
-          />
+           disabled={readOnly} />
         </div>
       </div>
 
       <div className="hw-subsection">
         <div className="hw-subhead">
           <span>{t('inspector.storage')}</span>
-          <button type="button" className="hw-add" onClick={addDisk}>
+          <button type="button" className="hw-add" onClick={addDisk} disabled={readOnly}>
             <Icon name="plus" size={13} />
             {t('inspector.disk')}
           </button>
@@ -603,7 +747,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                       type: event.target.value as DiskType,
                     })
                   }
-                >
+                 disabled={readOnly}>
                   {DISK_TYPES.map((type) => (
                     <option key={type} value={type}>
                       {t(`diskTypes.${type}.label`, { defaultValue: DISK_TYPE_META[type].label })}
@@ -624,7 +768,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                         sizeGb: numberFromInput(event.target.value) ?? 0,
                       })
                     }
-                  />
+                   disabled={readOnly} />
                   <span>GB</span>
                 </span>
                 <button
@@ -633,7 +777,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                   onClick={() => removeDisk(disk.id)}
                   title={t('inspector.removeDisk')}
                   aria-label={t('inspector.removeDisk')}
-                >
+                 disabled={readOnly}>
                   <Icon name="trash" size={13} />
                 </button>
               </div>
@@ -645,7 +789,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                   onChange={(event) =>
                     updateDisk(disk.id, { raidId: event.target.value })
                   }
-                >
+                 disabled={readOnly}>
                   <option value="">{t('inspector.noRaid')}</option>
                   {raids.map((raid) => (
                     <option key={raid.id} value={raid.id}>
@@ -663,7 +807,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
       <div className="hw-subsection">
         <div className="hw-subhead">
           <span>{t('inspector.raidArrays')}</span>
-          <button type="button" className="hw-add" onClick={addRaid}>
+          <button type="button" className="hw-add" onClick={addRaid} disabled={readOnly}>
             <Icon name="plus" size={13} />
             RAID
           </button>
@@ -685,14 +829,14 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                       onChange={(event) =>
                         updateRaid(raid.id, { name: event.target.value })
                       }
-                    />
+                     disabled={readOnly} />
                     <button
                       type="button"
                       className="hw-remove"
                       onClick={() => removeRaid(raid.id)}
                       title={t('inspector.removeRaid')}
                       aria-label={t('inspector.removeRaid')}
-                    >
+                     disabled={readOnly}>
                       <Icon name="trash" size={13} />
                     </button>
                   </div>
@@ -705,7 +849,7 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
                           level: event.target.value as RaidLevel,
                         })
                       }
-                    >
+                     disabled={readOnly}>
                       {RAID_LEVELS.map((level) => (
                         <option key={level} value={level}>
                           {t(`raid.${level}.label`, { defaultValue: RAID_LEVEL_META[level].label })}
@@ -738,14 +882,17 @@ function HardwareSection({ node, onUpdateNode }: HardwareSectionProps) {
 interface PortsSectionProps {
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
 }
 
 function AccessPointSection({
   node,
   onUpdateNode,
+  readOnly = false,
 }: {
   node: DeviceNode
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const wifiNetworks = node.wifiNetworks ?? []
@@ -797,7 +944,7 @@ function AccessPointSection({
                 onChange={(event) =>
                   updateNetwork(network.id, { ssid: event.target.value })
                 }
-              />
+               disabled={readOnly} />
               {wifiNetworks.length > 1 && (
                 <button
                   type="button"
@@ -805,7 +952,7 @@ function AccessPointSection({
                   onClick={() => removeNetwork(network.id)}
                   title={t('inspector.removeNetwork')}
                   aria-label={t('inspector.removeNetwork')}
-                >
+                 disabled={readOnly}>
                   <Icon name="trash" size={13} />
                 </button>
               )}
@@ -818,13 +965,13 @@ function AccessPointSection({
                 onChange={(event) =>
                   updateNetwork(network.id, { password: event.target.value })
                 }
-              />
+               disabled={readOnly} />
             </div>
           </div>
         ))}
       </div>
 
-      <button type="button" className="hw-add is-wide" onClick={addNetwork}>
+      <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
         <Icon name="plus" size={13} />
         {t('inspector.addWifiNetwork')}
       </button>
@@ -840,7 +987,7 @@ function AccessPointSection({
             onChange={(event) =>
               patch({ apDhcpEnabled: event.target.value === 'yes' })
             }
-          >
+           disabled={readOnly}>
             <option value="no">{t('common.no')}</option>
             <option value="yes">{t('common.yes')}</option>
           </select>
@@ -859,7 +1006,7 @@ function AccessPointSection({
               onChange={(event) =>
                 patch({ apDhcpNetwork: event.target.value })
               }
-            />
+             disabled={readOnly} />
           </div>
         )}
       </div>
@@ -867,7 +1014,207 @@ function AccessPointSection({
   )
 }
 
-function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
+function RouterSection({
+  node,
+  onUpdateNode,
+  readOnly = false,
+}: {
+  node: DeviceNode
+  onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
+  readOnly?: boolean
+}) {
+  const { t } = useTranslation()
+  const patch = (value: Partial<DeviceNode>) => onUpdateNode(node.id, value)
+  const wifiEnabled = node.routerWifiEnabled ?? false
+  const wifiNetworks = node.wifiNetworks ?? []
+  const dhcpSubnets = node.routerDhcpSubnets ?? []
+
+  const updateNetwork = (id: string, value: Partial<WifiNetwork>) => {
+    patch({
+      wifiNetworks: wifiNetworks.map((item) =>
+        item.id === id ? { ...item, ...value } : item,
+      ),
+    })
+  }
+  const addNetwork = () => {
+    patch({
+      wifiNetworks: [
+        ...wifiNetworks,
+        { id: createRowId(), ssid: '', password: '' },
+      ],
+    })
+  }
+  const removeNetwork = (id: string) => {
+    const next = wifiNetworks.filter((item) => item.id !== id)
+    patch({ wifiNetworks: next })
+  }
+
+  const updateSubnet = (id: string, value: Partial<DhcpSubnet>) => {
+    patch({
+      routerDhcpSubnets: dhcpSubnets.map((item) =>
+        item.id === id ? { ...item, ...value } : item,
+      ),
+    })
+  }
+  const addSubnet = () => {
+    patch({
+      routerDhcpSubnets: [
+        ...dhcpSubnets,
+        { id: createRowId(), vlan: '', subnet: '', description: '' },
+      ],
+    })
+  }
+  const removeSubnet = (id: string) => {
+    patch({ routerDhcpSubnets: dhcpSubnets.filter((item) => item.id !== id) })
+  }
+
+  return (
+    <section className="hw-section">
+      <header className="hw-section-head">
+        <span className="hw-section-title">{t('inspector.routerSettings')}</span>
+      </header>
+
+      <div className="hw-subsection">
+        <div className="field">
+          <label className="field-label" htmlFor="router-wifi-enabled">
+            {t('inspector.wifi')}
+          </label>
+          <select
+            id="router-wifi-enabled"
+            value={wifiEnabled ? 'yes' : 'no'}
+            onChange={(event) => {
+              const enabled = event.target.value === 'yes'
+              patch({
+                routerWifiEnabled: enabled,
+                wifiNetworks:
+                  enabled && wifiNetworks.length === 0
+                    ? [{ id: createRowId(), ssid: '', password: '' }]
+                    : wifiNetworks,
+              })
+            }}
+           disabled={readOnly}>
+            <option value="no">{t('common.no')}</option>
+            <option value="yes">{t('common.yes')}</option>
+          </select>
+        </div>
+
+        {wifiEnabled && (
+          <>
+            <div className="hw-subhead">
+              <span>{t('inspector.wifiNetworks')}</span>
+            </div>
+            <div className="hw-list">
+              {wifiNetworks.map((network, index) => (
+                <div className="hw-item" key={network.id}>
+                  <div className="hw-row">
+                    <input
+                      value={network.ssid}
+                      placeholder={`SSID ${index + 1}`}
+                      aria-label={t('inspector.ssid')}
+                      onChange={(event) =>
+                        updateNetwork(network.id, { ssid: event.target.value })
+                      }
+                     disabled={readOnly} />
+                    <button
+                      type="button"
+                      className="hw-remove"
+                      onClick={() => removeNetwork(network.id)}
+                      title={t('inspector.removeNetwork')}
+                      aria-label={t('inspector.removeNetwork')}
+                     disabled={readOnly}>
+                      <Icon name="trash" size={13} />
+                    </button>
+                  </div>
+                  <div className="hw-row is-sub">
+                    <input
+                      value={network.password}
+                      placeholder={t('inspector.wifiPassword')}
+                      aria-label={t('inspector.wifiPasswordAria')}
+                      onChange={(event) =>
+                        updateNetwork(network.id, { password: event.target.value })
+                      }
+                     disabled={readOnly} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="hw-add is-wide" onClick={addNetwork} disabled={readOnly}>
+              <Icon name="plus" size={13} />
+              {t('inspector.addWifiNetwork')}
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="hw-subsection">
+        <div className="hw-subhead">
+          <span>{t('inspector.dhcpSubnets')}</span>
+          <button type="button" className="hw-add" onClick={addSubnet} disabled={readOnly}>
+            <Icon name="plus" size={13} />
+            {t('inspector.addSubnet')}
+          </button>
+        </div>
+        {dhcpSubnets.length === 0 && (
+          <p className="hw-empty">{t('inspector.addSubnetHint')}</p>
+        )}
+        <div className="hw-list">
+          {dhcpSubnets.map((subnet) => (
+            <div className="hw-item" key={subnet.id}>
+              <div className="hw-row">
+                <input
+                  type="number"
+                  min={1}
+                  max={4094}
+                  value={subnet.vlan}
+                  placeholder={t('inspector.vlanNumber')}
+                  aria-label={t('inspector.vlanNumber')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, {
+                      vlan:
+                        event.target.value === ''
+                          ? ''
+                          : Math.max(1, Number(event.target.value)),
+                    })
+                  }
+                 disabled={readOnly} />
+                <input
+                  className="mono-input"
+                  value={subnet.subnet}
+                  placeholder="192.168.10.0/24"
+                  aria-label={t('inspector.dhcpNetwork')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, { subnet: event.target.value })
+                  }
+                 disabled={readOnly} />
+                <button
+                  type="button"
+                  className="hw-remove"
+                  onClick={() => removeSubnet(subnet.id)}
+                  title={t('inspector.removeSubnet')}
+                  aria-label={t('inspector.removeSubnet')}
+                 disabled={readOnly}>
+                  <Icon name="trash" size={13} />
+                </button>
+              </div>
+              <div className="hw-row is-sub">
+                <input
+                  value={subnet.description}
+                  placeholder={t('inspector.subnetDescription')}
+                  aria-label={t('inspector.subnetDescription')}
+                  onChange={(event) =>
+                    updateSubnet(subnet.id, { description: event.target.value })
+                  }
+                 disabled={readOnly} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PortsSection({ node, onUpdateNode, readOnly = false }: PortsSectionProps) {
   const { t, i18n } = useTranslation()
   const ports = node.ports ?? []
   const patch = (next: PortGroup[]) => onUpdateNode(node.id, { ports: next })
@@ -939,7 +1286,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                     type: event.target.value as PortType,
                   })
                 }
-              >
+               disabled={readOnly}>
                 {PORT_TYPES.map((type) => (
                   <option key={type} value={type}>
                     {t(`ports.${type}.label`, { defaultValue: PORT_TYPE_META[type].label })}
@@ -957,7 +1304,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                   onChange={(event) =>
                     setRange(port, 'from', event.target.value)
                   }
-                />
+                 disabled={readOnly} />
                 <span>–</span>
                 <input
                   type="number"
@@ -967,7 +1314,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                   aria-label={t('inspector.portLast')}
                   value={port.to}
                   onChange={(event) => setRange(port, 'to', event.target.value)}
-                />
+                 disabled={readOnly} />
               </span>
               <button
                 type="button"
@@ -977,7 +1324,7 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                 }
                 title={t('inspector.removePorts')}
                 aria-label={t('inspector.removePorts')}
-              >
+               disabled={readOnly}>
                 <Icon name="trash" size={13} />
               </button>
             </div>
@@ -994,13 +1341,13 @@ function PortsSection({ node, onUpdateNode }: PortsSectionProps) {
                 onChange={(event) =>
                   updatePort(port.id, { note: event.target.value })
                 }
-              />
+               disabled={readOnly} />
             </div>
           </div>
         ))}
       </div>
 
-      <button type="button" className="hw-add is-wide" onClick={addPort}>
+      <button type="button" className="hw-add is-wide" onClick={addPort} disabled={readOnly}>
         <Icon name="plus" size={13} />
         {t('inspector.addPorts')}
       </button>
@@ -1014,6 +1361,7 @@ interface LinkFormProps {
   linkTo?: DeviceNode
   onUpdateLink: (id: string, patch: Partial<Connection>) => void
   onDeleteLink: (id: string) => void
+  readOnly?: boolean
 }
 
 function nodeLabel(node: DeviceNode | undefined, t: any) {
@@ -1027,6 +1375,7 @@ function LinkForm({
   linkTo,
   onUpdateLink,
   onDeleteLink,
+  readOnly = false,
 }: LinkFormProps) {
   const { t } = useTranslation()
   const meta = LINK_META[link.kind]
@@ -1063,7 +1412,7 @@ function LinkForm({
                 : { kind },
             )
           }}
-        >
+         disabled={readOnly}>
           {LINK_KINDS.map((kind) => (
             <option key={kind} value={kind}>
               {t(`links.${kind}`, { defaultValue: LINK_META[kind].label })}
@@ -1087,7 +1436,7 @@ function LinkForm({
                 vpnProtocol: event.target.value as VpnProtocol,
               })
             }
-          >
+           disabled={readOnly}>
             {VPN_PROTOCOLS.map((item) => (
               <option key={item} value={item}>
                 {t(`vpn.${item}.label`, { defaultValue: VPN_PROTOCOL_META[item].label })}
@@ -1115,7 +1464,7 @@ function LinkForm({
           onChange={(event) =>
             onUpdateLink(link.id, { label: event.target.value })
           }
-        />
+         disabled={readOnly} />
         <span className="field-hint">
           {t('inspector.linkLabelHint')}
           {link.kind === 'vpn' && t('inspector.linkLabelHintVpn')}
@@ -1140,7 +1489,7 @@ function LinkForm({
           type="button"
           className="danger-button is-wide"
           onClick={() => onDeleteLink(link.id)}
-        >
+         disabled={readOnly}>
           <Icon name="trash" size={15} />
           {t('inspector.deleteLink')}
         </button>
@@ -1155,6 +1504,7 @@ interface GroupFormProps {
   onUpdateGroup: (id: string, patch: Partial<DeviceGroup>) => void
   onSelectNodes: (ids: string[]) => void
   onUngroup: (id: string) => void
+  readOnly?: boolean
 }
 
 function GroupForm({
@@ -1163,6 +1513,7 @@ function GroupForm({
   onUpdateGroup,
   onSelectNodes,
   onUngroup,
+  readOnly = false,
 }: GroupFormProps) {
   const { t, i18n } = useTranslation()
   const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
@@ -1197,7 +1548,7 @@ function GroupForm({
           onChange={(event) =>
             onUpdateGroup(group.id, { name: event.target.value })
           }
-        />
+         disabled={readOnly} />
       </div>
 
       <div className="field">
@@ -1212,7 +1563,7 @@ function GroupForm({
               onClick={() => onUpdateGroup(group.id, { color })}
               aria-label={color}
               title={color}
-            />
+             disabled={readOnly} />
           ))}
         </div>
       </div>
@@ -1258,7 +1609,7 @@ function GroupForm({
           type="button"
           className="secondary-button is-wide"
           onClick={() => onUngroup(group.id)}
-        >
+         disabled={readOnly}>
           <Icon name="ungroup" size={15} />
           {t('inspector.ungroupWide')}
         </button>
@@ -1272,6 +1623,7 @@ interface MultiSelectionFormProps {
   onCreateGroup: (ids: string[]) => void
   onSelectNodes: (ids: string[]) => void
   onDeleteNodes: (ids: string[]) => void
+  readOnly?: boolean
 }
 
 function MultiSelectionForm({
@@ -1279,6 +1631,7 @@ function MultiSelectionForm({
   onCreateGroup,
   onSelectNodes,
   onDeleteNodes,
+  readOnly = false,
 }: MultiSelectionFormProps) {
   const { t } = useTranslation()
   const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
@@ -1338,7 +1691,7 @@ function MultiSelectionForm({
           type="button"
           className="danger-button is-wide"
           onClick={() => onDeleteNodes(selectedNodes.map((member) => member.id))}
-        >
+         disabled={readOnly}>
           <Icon name="trash" size={15} />
           {t('inspector.deleteSelected')}
         </button>

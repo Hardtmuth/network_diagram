@@ -20,6 +20,7 @@ import {
 import type { DeviceNode as DeviceNodeType, DiskType } from '../types'
 import { DeviceIcon } from './DeviceIcon'
 import { Icon } from './Icons'
+import { OsIcon } from '../os'
 
 interface DeviceNodeProps {
   node: DeviceNodeType
@@ -166,11 +167,26 @@ export function DeviceNode({
         </span>
       </header>
 
-      <p className={`node-model ${node.model ? '' : 'is-empty'}`}>
-        {node.model || t('node.modelEmpty')}
-      </p>
+      {node.kind !== 'container' && node.model?.trim() && (
+        <p className="node-model">{node.model}</p>
+      )}
 
-      {node.os && <p className="node-model node-os">{node.os}</p>}
+      {node.kind === 'isp' && (
+        <p className="node-model">
+          {t(`inspector.isp.${node.ispConnectionType ?? 'pppoe'}`)}
+        </p>
+      )}
+
+      {node.kind === 'container' && node.containerService?.trim() && (
+        <p className="node-model">{node.containerService}</p>
+      )}
+
+      {node.os?.trim() && (
+        <p className="node-model node-os">
+          <OsIcon os={node.os} size={13} />
+          <span>{node.os}</span>
+        </p>
+      )}
 
       {specChips.length > 0 && (
         <div className="node-specs">
@@ -220,9 +236,11 @@ export function DeviceNode({
       {(() => {
         const canShowNetwork =
           node.kind !== 'usb' &&
+          node.kind !== 'ups' &&
           !(node.kind === 'printer' && (node.printerInterface ?? 'ethernet') === 'usb')
         const showIp = canShowNetwork && Boolean(node.ip?.trim())
-        const showMac = canShowNetwork && Boolean(node.mac?.trim())
+        const showMac =
+          canShowNetwork && node.kind !== 'isp' && Boolean(node.mac?.trim())
         if (!showIp && !showMac) return null
         return (
           <div className="node-fields">

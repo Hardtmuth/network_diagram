@@ -48,7 +48,9 @@
     "importJson": "Import JSON",
     "exportDiagram": "Export diagram",
     "clearCanvas": "Clear canvas",
-    "language": "Language"
+    "language": "Language",
+    "viewMode": "View only",
+    "editMode": "Edit mode"
   },
   "dashboard": {
     "title": "Personal cabinet",
@@ -190,6 +192,24 @@
     "addWifiNetwork": "Add Wi-Fi network",
     "ownDhcp": "Own DHCP",
     "dhcpNetwork": "Network (DHCP)",
+    "routerSettings": "Router: Wi-Fi & DHCP",
+    "wifi": "Wi-Fi",
+    "dhcpSubnets": "DHCP / subnets",
+    "addSubnet": "Subnet",
+    "addSubnetHint": "Add subnets with VLAN, network range, and description.",
+    "removeSubnet": "Remove subnet",
+    "vlanNumber": "VLAN",
+    "subnetDescription": "Subnet description",
+    "ispConnectionType": "Connection type",
+    "isp": {
+      "pppoe": "PPPoE",
+      "static": "Static address",
+      "dhcp": "DHCP"
+    },
+    "containerService": "Service",
+    "containerServicePlaceholder": "e.g. PostgreSQL, Jellyfin, Immich",
+    "containerServiceHint": "Specify the service running in this container.",
+    "mobilePlatform": "OS",
     "networkPorts": "Network ports",
     "ports": "Ports",
     "portsHint": "Example: ports 1–20 — VLAN 10, sales; 23 — ISP1; 24 — ISP2.",
@@ -287,6 +307,10 @@
       "label": "ISP",
       "hint": "External uplink"
     },
+    "ups": {
+      "label": "UPS",
+      "hint": "Uninterruptible power supply"
+    },
     "pc": {
       "label": "PC",
       "hint": "Desktop client"
@@ -310,6 +334,10 @@
     "nettop": {
       "label": "Nettop",
       "hint": "Mini PC"
+    },
+    "sbc": {
+      "label": "Single-board computer",
+      "hint": "Raspberry Pi / Banana Pi"
     },
     "printer3d": {
       "label": "3D printer",

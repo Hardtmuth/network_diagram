@@ -11,10 +11,10 @@ export function createDemoDiagram(): DiagramSnapshot {
         x: 20,
         y: 20,
         name: 'Провайдер',
-        model: 'Городской ISP',
-        ip: '',
-        mac: '',
+        model: '',
+        ip: '203.0.113.10',
         notes: 'Статический IP · 1 GbE',
+        ispConnectionType: 'static',
       },
       {
         id: 'demo-router',
@@ -26,6 +26,24 @@ export function createDemoDiagram(): DiagramSnapshot {
         ip: '192.168.88.1',
         mac: '48:8F:5A:11:02:01',
         notes: 'DHCP · DNS · VLAN 10/20',
+        routerWifiEnabled: true,
+        wifiNetworks: [
+          { id: 'demo-router-wifi-1', ssid: 'Homelab-5G', password: 'changeme123' },
+        ],
+        routerDhcpSubnets: [
+          {
+            id: 'demo-router-dhcp-1',
+            vlan: 10,
+            subnet: '192.168.10.0/24',
+            description: 'Основная сеть',
+          },
+          {
+            id: 'demo-router-dhcp-2',
+            vlan: 20,
+            subnet: '192.168.20.0/24',
+            description: 'Гостевая сеть',
+          },
+        ],
         ports: [
           {
             id: 'demo-router-port-1',
@@ -225,7 +243,8 @@ export function createDemoDiagram(): DiagramSnapshot {
         x: 300,
         y: 840,
         name: 'Pi-hole',
-        model: 'Docker · alpine',
+        model: '',
+        containerService: 'Pi-hole',
         ip: '192.168.88.31',
         mac: '',
         notes: 'DNS · блокировка рекламы',

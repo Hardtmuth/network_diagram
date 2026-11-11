@@ -123,6 +123,20 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
     color: '#f9a8d4',
     hint: 'Мини ПК',
   },
+  sbc: {
+    kind: 'sbc',
+    label: 'Одноплатник',
+    category: 'Клиенты',
+    color: '#4ade80',
+    hint: 'Raspberry Pi / Banana Pi',
+  },
+  ups: {
+    kind: 'ups',
+    label: 'ИБП',
+    category: 'Сеть',
+    color: '#f59e0b',
+    hint: 'Источник бесперебойного питания',
+  },
   printer3d: {
     kind: 'printer3d',
     label: '3D-принтер',
@@ -140,14 +154,14 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
 }
 
 export const DEVICE_GROUPS: { label: DeviceCategory; kinds: DeviceKind[] }[] = [
-  { label: 'Сеть', kinds: ['router', 'switch', 'ap', 'isp'] },
+  { label: 'Сеть', kinds: ['router', 'switch', 'ap', 'isp', 'ups'] },
   {
     label: 'Серверы и NAS',
     kinds: ['server', 'nas', 'vm', 'container', 'usb'],
   },
   {
     label: 'Клиенты',
-    kinds: ['pc', 'laptop', 'nettop', 'phone', 'mobile', 'printer', 'printer3d', 'other'],
+    kinds: ['pc', 'laptop', 'nettop', 'sbc', 'phone', 'mobile', 'printer', 'printer3d', 'other'],
   },
 ]
 
@@ -197,9 +211,24 @@ export const GROUP_COLORS = [
   '#f472b6',
 ]
 
-export const HARDWARE_KINDS: DeviceKind[] = ['server', 'vm', 'nas']
+export const HARDWARE_KINDS: DeviceKind[] = [
+  'server',
+  'vm',
+  'nas',
+  'pc',
+  'laptop',
+  'nettop',
+  'sbc',
+]
 
-export const OS_KINDS: DeviceKind[] = ['pc', 'laptop', 'vm', 'server']
+export const OS_KINDS: DeviceKind[] = [
+  'pc',
+  'laptop',
+  'nettop',
+  'sbc',
+  'vm',
+  'server',
+]
 
 export const PORT_KINDS: DeviceKind[] = [
   'router',
@@ -251,6 +280,8 @@ export const PORT_TYPE_META: Record<
 }
 
 export const PORT_TYPES: PortType[] = ['ethernet', 'sfp']
+
+export const ISP_CONNECTION_TYPES = ['pppoe', 'static', 'dhcp'] as const
 
 export const DND_MIME = 'application/x-homelab-device'
 export const NODE_WIDTH = 236

@@ -48,7 +48,9 @@
     "importJson": "Импортировать JSON",
     "exportDiagram": "Экспортировать схему",
     "clearCanvas": "Очистить холст",
-    "language": "Язык"
+    "language": "Язык",
+    "viewMode": "Только просмотр",
+    "editMode": "Режим изменения"
   },
   "dashboard": {
     "title": "Личный кабинет",
@@ -190,6 +192,24 @@
     "addWifiNetwork": "Добавить Wi-Fi сеть",
     "ownDhcp": "Собственный DHCP",
     "dhcpNetwork": "Сеть (DHCP)",
+    "routerSettings": "Роутер: Wi-Fi и DHCP",
+    "wifi": "Wi-Fi",
+    "dhcpSubnets": "DHCP / подсети",
+    "addSubnet": "Подсеть",
+    "addSubnetHint": "Добавьте подсети с VLAN, диапазоном сети и описанием.",
+    "removeSubnet": "Удалить подсеть",
+    "vlanNumber": "VLAN",
+    "subnetDescription": "Описание подсети",
+    "ispConnectionType": "Тип подключения",
+    "isp": {
+      "pppoe": "PPPoE",
+      "static": "Статический адрес",
+      "dhcp": "DHCP"
+    },
+    "containerService": "Сервис",
+    "containerServicePlaceholder": "Например, PostgreSQL, Jellyfin, Immich",
+    "containerServiceHint": "Укажите сервис, который работает в контейнере.",
+    "mobilePlatform": "ОС",
     "networkPorts": "Сетевые порты",
     "ports": "Порты",
     "portsHint": "Например: порты 1–20 — VLAN 10, отдел продаж; 23 — ISP1; 24 — ISP2.",
@@ -287,6 +307,10 @@
       "label": "Интернет-провайдер",
       "hint": "Внешний канал"
     },
+    "ups": {
+      "label": "ИБП",
+      "hint": "Источник бесперебойного питания"
+    },
     "pc": {
       "label": "ПК",
       "hint": "Стационарный клиент"
@@ -310,6 +334,10 @@
     "nettop": {
       "label": "Неттоп",
       "hint": "Мини ПК"
+    },
+    "sbc": {
+      "label": "Одноплатник",
+      "hint": "Raspberry Pi / Banana Pi"
     },
     "printer3d": {
       "label": "3D-принтер",

@@ -53,6 +53,7 @@ interface CanvasProps {
   onMoveNode: (id: string, x: number, y: number) => void
   onMoveNodes: (moves: { id: string; x: number; y: number }[]) => void
   onConnect: (from: string, to: string) => void
+  readOnly?: boolean
 }
 
 export interface CanvasHandle {
@@ -169,6 +170,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onMoveNode,
     onMoveNodes,
     onConnect,
+    readOnly = false,
   },
   ref,
 ) {
@@ -417,6 +419,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
   const addAtCenter = useCallback(
     (kind: DeviceKind) => {
+      if (readOnly) return
       const element = canvasRef.current
       if (!element) return
       const rect = element.getBoundingClientRect()
@@ -429,7 +432,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       )
       onAddNode(kind, x, y)
     },
-    [nodes.length, onAddNode, viewport],
+    [nodes.length, onAddNode, readOnly, viewport],
   )
 
   useImperativeHandle(
@@ -552,6 +555,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
       selection?.type === 'nodes' && selection.ids.includes(node.id)
     const moveIds = multiSelected ? selection.ids : [node.id]
     if (!multiSelected) onSelect({ type: 'node', id: node.id })
+    if (readOnly) return
 
     capturePointer(event.pointerId)
     const point = toWorld(event.clientX, event.clientY)
@@ -580,6 +584,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     event.preventDefault()
     event.stopPropagation()
     onSelect({ type: 'group', id: group.id })
+    if (readOnly) return
 
     const members = group.nodeIds
       .map((id) => nodes.find((candidate) => candidate.id === id))
@@ -603,7 +608,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     event: PointerEvent<HTMLElement>,
     node: DeviceNode,
   ) => {
-    if (event.button !== 0) return
+    if (event.button !== 0 || readOnly) return
     event.preventDefault()
     event.stopPropagation()
     onSelect({ type: 'node', id: node.id })
@@ -754,6 +759,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (readOnly) return
     event.preventDefault()
     event.dataTransfer.dropEffect = 'copy'
     if (!dragOver) setDragOver(true)
@@ -768,6 +774,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setDragOver(false)
+    if (readOnly) return
     const kind = event.dataTransfer.getData(DND_MIME) as DeviceKind
     if (!kind || !(kind in DEVICE_META)) return
     const point = toWorld(event.clientX, event.clientY)

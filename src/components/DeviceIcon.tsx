@@ -122,6 +122,15 @@ export function DeviceIcon({ kind, size = 22 }: DeviceIconProps) {
           <path d="M18 18.5v3M16.5 20h3" />
         </svg>
       )
+    case 'ups':
+      return (
+        <svg {...common}>
+          <rect x="4" y="4" width="16" height="14" rx="2.2" />
+          <path d="M8 18v2M16 18v2M7 20h10" />
+          <path d="M12 7.2v5.2M9.6 10h4.8" />
+          <path d="M8 14.5h8" />
+        </svg>
+      )
     case 'usb':
       return (
         <svg {...common}>
@@ -149,6 +158,17 @@ export function DeviceIcon({ kind, size = 22 }: DeviceIconProps) {
           <path d="M10 20h4" />
           <path d="M12 17v3" />
           <path d="M9.5 7.5h5M9.5 10h3" />
+        </svg>
+      )
+    case 'sbc':
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5" width="17" height="12" rx="2" />
+          <path d="M7 17v2.5M10 17v2.5M14 17v2.5M17 17v2.5" />
+          <rect x="7" y="8" width="5" height="4" rx="0.8" />
+          <circle cx="16" cy="9" r="0.8" />
+          <circle cx="16" cy="12" r="0.8" />
+          <path d="M13.5 9.5h1M13.5 11.5h1" />
         </svg>
       )
     case 'printer3d':
