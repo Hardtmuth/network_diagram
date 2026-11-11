@@ -48,7 +48,7 @@ type Theme = 'dark' | 'light'
 type SaveState = 'saved' | 'saving'
 type View = 'dashboard' | 'editor'
 
-const LINK_KINDS: LinkKind[] = ['ethernet', 'fiber', 'wifi', 'usb', 'vpn']
+const LINK_KINDS: LinkKind[] = ['ethernet', 'fiber', 'wifi', 'usb', 'vpn', 'coaxial']
 const VPN_PROTOCOLS: VpnProtocol[] = ['l2tp', 'openvpn', 'wireguard']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -73,6 +73,9 @@ function isDeviceNode(value: unknown): value is DeviceNode {
       value.printerInterface === 'usb' ||
       value.printerInterface === 'ethernet' ||
       value.printerInterface === 'wifi') &&
+    (value.recorderType === undefined ||
+      value.recorderType === 'dvr' ||
+      value.recorderType === 'nvr') &&
     typeof value.notes === 'string'
   )
 }
@@ -100,7 +103,10 @@ function isDeviceGroup(value: unknown): value is DeviceGroup {
     typeof value.name === 'string' &&
     typeof value.color === 'string' &&
     Array.isArray(value.nodeIds) &&
-    value.nodeIds.every((id) => typeof id === 'string')
+    value.nodeIds.every((id) => typeof id === 'string') &&
+    (value.groupIds === undefined ||
+      (Array.isArray(value.groupIds) &&
+        value.groupIds.every((id) => typeof id === 'string')))
   )
 }
 
@@ -303,15 +309,21 @@ function parseDiagram(value: unknown): DiagramSnapshot | null {
   const rawGroups = Array.isArray(value.groups)
     ? value.groups.filter(isDeviceGroup)
     : []
+  const groupIdsSet = new Set(rawGroups.map((group) => group.id))
+  const usedGroupChildren = new Set<string>()
   const groups = rawGroups
     .map((group) => {
       const memberIds = [...new Set(group.nodeIds)].filter(
         (id) => nodeIds.has(id) && !usedGroupMembers.has(id),
       )
       memberIds.forEach((id) => usedGroupMembers.add(id))
-      return { ...group, nodeIds: memberIds }
+      const childGroupIds = [
+        ...new Set((group.groupIds ?? []).filter((id) => groupIdsSet.has(id))),
+      ].filter((id) => id !== group.id && !usedGroupChildren.has(id))
+      childGroupIds.forEach((id) => usedGroupChildren.add(id))
+      return { ...group, groupIds: childGroupIds, nodeIds: memberIds }
     })
-    .filter((group) => group.nodeIds.length > 0)
+    .filter((group) => group.nodeIds.length > 0 || group.groupIds.length > 0)
 
   return {
     version: 1,
@@ -641,8 +653,9 @@ function App() {
           .map((group) => ({
             ...group,
             nodeIds: group.nodeIds.filter((id) => !idSet.has(id)),
+            groupIds: (group.groupIds ?? []).filter((gid) => !idSet.has(gid)),
           }))
-          .filter((group) => group.nodeIds.length > 0),
+          .filter((group) => group.nodeIds.length > 0 || (group.groupIds ?? []).length > 0),
       }
     })
     setSelection(null)
@@ -744,31 +757,35 @@ function App() {
     setSelection(null)
   }, [])
 
-  const createGroup = useCallback((ids: string[]) => {
+  const createGroup = useCallback((nodeIds: string[], groupIds: string[] = []) => {
     if (readOnly) return
-    const uniqueIds = [...new Set(ids)]
-    if (uniqueIds.length < 2) return
+    const uniqueNodeIds = [...new Set(nodeIds)]
+    const uniqueGroupIds = [...new Set(groupIds)]
+    if (uniqueNodeIds.length + uniqueGroupIds.length < 2) return
     const id = createId()
     setDiagram((current) => {
       if (!current) return current
-      const membership = new Set(uniqueIds)
+      const nodeMembership = new Set(uniqueNodeIds)
+      const groupMembership = new Set(uniqueGroupIds)
       const cleanedGroups = current.groups
         .map((group) => ({
           ...group,
-          nodeIds: group.nodeIds.filter((nodeId) => !membership.has(nodeId)),
+          nodeIds: group.nodeIds.filter((nodeId) => !nodeMembership.has(nodeId)),
+          groupIds: (group.groupIds ?? []).filter((gid) => !groupMembership.has(gid)),
         }))
-        .filter((group) => group.nodeIds.length > 0)
+        .filter((group) => group.nodeIds.length > 0 || (group.groupIds ?? []).length > 0)
       const group: DeviceGroup = {
         id,
         name: t('defaults.groupName', { index: current.groups.length + 1 }),
         color: GROUP_COLORS[current.groups.length % GROUP_COLORS.length],
-        nodeIds: uniqueIds,
+        nodeIds: uniqueNodeIds,
+        groupIds: uniqueGroupIds,
       }
       return { ...current, groups: [...cleanedGroups, group] }
     })
     setSelection({ type: 'group', id })
     setToast(t('toast.grouped'))
-  }, [])
+  }, [readOnly, t])
 
   const updateGroup = useCallback(
     (id: string, patch: Partial<DeviceGroup>) => {
@@ -790,14 +807,21 @@ function App() {
     if (readOnly) return
     setDiagram((current) => {
       if (!current) return current
+      const target = current.groups.find((g) => g.id === id)
+      if (!target) return current
       return {
         ...current,
-        groups: current.groups.filter((group) => group.id !== id),
+        groups: current.groups
+          .filter((group) => group.id !== id)
+          .map((group) => ({
+            ...group,
+            groupIds: (group.groupIds ?? []).filter((gid) => gid !== id),
+          })),
       }
     })
     setSelection(null)
     setToast(t('toast.ungrouped'))
-  }, [])
+  }, [readOnly, t])
 
   const assignNodeToGroup = useCallback(
     (nodeId: string, groupId: string | null) => {
@@ -816,11 +840,11 @@ function App() {
                 ? { ...group, nodeIds: [...group.nodeIds, nodeId] }
                 : group,
             )
-            .filter((group) => group.nodeIds.length > 0),
+            .filter((group) => group.nodeIds.length > 0 || (group.groupIds ?? []).length > 0),
         }
       })
     },
-    [],
+    [readOnly],
   )
 
   const selectNodes = useCallback(
@@ -852,8 +876,13 @@ function App() {
       ungroup(selection.id)
       return
     }
+    if (selection.type === 'items') {
+      if (selection.nodeIds.length > 0) deleteNodes(selection.nodeIds)
+      selection.groupIds.forEach((id) => ungroup(id))
+      return
+    }
     deleteNodes(selection.ids)
-  }, [deleteLink, deleteNodes, selection, ungroup])
+  }, [deleteLink, deleteNodes, readOnly, selection, ungroup])
 
   const clearCanvas = () => {
     if (readOnly) return
@@ -1094,6 +1123,12 @@ function App() {
   const selectedNodes =
     selection?.type === 'nodes'
       ? nodes.filter((node) => selection.ids.includes(node.id))
+      : selection?.type === 'items'
+        ? nodes.filter((node) => selection.nodeIds.includes(node.id))
+        : []
+  const selectedGroupsList =
+    selection?.type === 'items'
+      ? groups.filter((group) => selection.groupIds.includes(group.id))
       : []
   const nodeGroup = selectedNode
     ? groups.find((group) => group.nodeIds.includes(selectedNode.id))
@@ -1425,6 +1460,7 @@ function App() {
                 group={selectedGroup}
                 groupNodes={selectedGroupNodes}
                 selectedNodes={selectedNodes}
+                selectedGroupsList={selectedGroupsList}
                 groups={groups}
                 nodeCount={nodes.length}
                 linkCount={connections.length}

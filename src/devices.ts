@@ -7,7 +7,7 @@ import type {
   VpnProtocol,
 } from './types'
 
-export type DeviceCategory = 'Сеть' | 'Серверы и NAS' | 'Клиенты'
+export type DeviceCategory = 'Сеть' | 'Серверы и NAS' | 'Клиенты' | 'Видеонаблюдение'
 
 export interface DeviceMeta {
   kind: DeviceKind
@@ -144,6 +144,27 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
     color: '#c084fc',
     hint: 'Аддитивная печать',
   },
+  recorder: {
+    kind: 'recorder',
+    label: 'Видеорегистратор',
+    category: 'Видеонаблюдение',
+    color: '#fb923c',
+    hint: 'DVR / NVR',
+  },
+  ipCamera: {
+    kind: 'ipCamera',
+    label: 'IP-камера',
+    category: 'Видеонаблюдение',
+    color: '#38bdf8',
+    hint: 'Сетевая камера',
+  },
+  analogCamera: {
+    kind: 'analogCamera',
+    label: 'Аналоговая камера',
+    category: 'Видеонаблюдение',
+    color: '#94a3b8',
+    hint: 'Камера по коаксиальному кабелю',
+  },
   other: {
     kind: 'other',
     label: 'Другое',
@@ -158,6 +179,10 @@ export const DEVICE_GROUPS: { label: DeviceCategory; kinds: DeviceKind[] }[] = [
   {
     label: 'Серверы и NAS',
     kinds: ['server', 'nas', 'vm', 'container', 'usb'],
+  },
+  {
+    label: 'Видеонаблюдение',
+    kinds: ['recorder', 'ipCamera', 'analogCamera'],
   },
   {
     label: 'Клиенты',
@@ -181,6 +206,7 @@ export const LINK_META: Record<LinkKind, LinkMeta> = {
   wifi: { label: 'Wi-Fi', color: '#34d399', dash: '7 6' },
   usb: { label: 'USB / прочее', color: '#fbbf24', dash: '2 5' },
   vpn: { label: 'VPN-туннель', color: '#f472b6', dash: '4 6' },
+  coaxial: { label: 'Коаксиальный кабель', color: '#fb923c' },
 }
 
 export const LINK_KINDS: LinkKind[] = [
@@ -189,6 +215,7 @@ export const LINK_KINDS: LinkKind[] = [
   'wifi',
   'usb',
   'vpn',
+  'coaxial',
 ]
 
 export const VPN_PROTOCOL_META: Record<

@@ -17,9 +17,14 @@ export type DeviceKind =
   | 'sbc'
   | 'ups'
   | 'printer3d'
+  | 'recorder'
+  | 'ipCamera'
+  | 'analogCamera'
   | 'other'
 
-export type LinkKind = 'ethernet' | 'fiber' | 'wifi' | 'usb' | 'vpn'
+export type RecorderType = 'dvr' | 'nvr'
+
+export type LinkKind = 'ethernet' | 'fiber' | 'wifi' | 'usb' | 'vpn' | 'coaxial'
 
 export type VpnProtocol = 'l2tp' | 'openvpn' | 'wireguard'
 
@@ -101,6 +106,7 @@ export interface DeviceNode {
   disks?: DiskEntry[]
   raids?: RaidGroup[]
   ports?: PortGroup[]
+  recorderType?: RecorderType
 }
 
 export interface Connection {
@@ -117,6 +123,7 @@ export interface DeviceGroup {
   name: string
   color: string
   nodeIds: string[]
+  groupIds: string[]
 }
 
 export type Selection =
@@ -124,6 +131,7 @@ export type Selection =
   | { type: 'link'; id: string }
   | { type: 'group'; id: string }
   | { type: 'nodes'; ids: string[] }
+  | { type: 'items'; nodeIds: string[]; groupIds: string[] }
   | null
 
 export interface DiagramSnapshot {

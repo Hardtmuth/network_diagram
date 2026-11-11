@@ -249,7 +249,12 @@
     "portWord_many": "портов",
     "diskWord_one": "диск",
     "diskWord_few": "диска",
-    "diskWord_many": "дисков"
+    "diskWord_many": "дисков",
+    "recorderType": "Тип регистратора",
+    "recorder": {
+      "dvr": "DVR",
+      "nvr": "NVR"
+    }
   },
   "toast": {
     "diagramDeleted": "Схема удалена",
@@ -348,19 +353,33 @@
     "other": {
       "label": "Другое",
       "hint": "Прочее устройство"
+    },
+    "recorder": {
+      "label": "Видеорегистратор",
+      "hint": "DVR / NVR"
+    },
+    "ipCamera": {
+      "label": "IP-камера",
+      "hint": "Сетевая камера"
+    },
+    "analogCamera": {
+      "label": "Аналоговая камера",
+      "hint": "Камера по коаксиальному кабелю"
     }
   },
   "categories": {
     "network": "Сеть",
     "servers": "Серверы и NAS",
-    "clients": "Клиенты"
+    "clients": "Клиенты",
+    "surveillance": "Видеонаблюдение"
   },
   "links": {
     "ethernet": "Ethernet",
     "fiber": "Оптика / DAC",
     "wifi": "Wi-Fi",
     "usb": "USB / прочее",
-    "vpn": "VPN-туннель"
+    "vpn": "VPN-туннель",
+    "coaxial": "Коаксиальный кабель"
   },
   "vpn": {
     "l2tp": {

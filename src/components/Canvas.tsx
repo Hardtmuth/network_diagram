@@ -535,32 +535,41 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     const additive = event.shiftKey || event.ctrlKey || event.metaKey
 
     if (additive) {
-      let current: string[] = []
-      if (selection?.type === 'nodes') current = selection.ids
-      else if (selection?.type === 'node') current = [selection.id]
-      const next = current.includes(node.id)
-        ? current.filter((id) => id !== node.id)
-        : [...current, node.id]
-      if (next.length === 0) {
-        onSelect(null)
-      } else if (next.length === 1) {
-        onSelect({ type: 'node', id: next[0] })
-      } else {
-        onSelect({ type: 'nodes', ids: next })
-      }
+      let nodeIds: string[] = []
+      let groupIds: string[] = []
+      if (selection?.type === 'items') { nodeIds = selection.nodeIds; groupIds = selection.groupIds }
+      else if (selection?.type === 'nodes') nodeIds = selection.ids
+      else if (selection?.type === 'node') nodeIds = [selection.id]
+      else if (selection?.type === 'group') groupIds = [selection.id]
+      const nextNodeIds = nodeIds.includes(node.id)
+        ? nodeIds.filter((id) => id !== node.id)
+        : [...nodeIds, node.id]
+      const total = nextNodeIds.length + groupIds.length
+      if (total === 0) onSelect(null)
+      else if (nextNodeIds.length === 1 && groupIds.length === 0) onSelect({ type: 'node', id: nextNodeIds[0] })
+      else if (nextNodeIds.length === 0 && groupIds.length === 1) onSelect({ type: 'group', id: groupIds[0] })
+      else if (groupIds.length === 0) onSelect({ type: 'nodes', ids: nextNodeIds })
+      else onSelect({ type: 'items', nodeIds: nextNodeIds, groupIds })
       return
     }
 
     const multiSelected =
-      selection?.type === 'nodes' && selection.ids.includes(node.id)
-    const moveIds = multiSelected ? selection.ids : [node.id]
+      (selection?.type === 'nodes' && selection.ids.includes(node.id)) ||
+      (selection?.type === 'items' && selection.nodeIds.includes(node.id))
+    const moveIds: string[] = multiSelected
+      ? selection?.type === 'items'
+        ? selection.nodeIds
+        : selection?.type === 'nodes'
+          ? selection.ids
+          : [node.id]
+      : [node.id]
     if (!multiSelected) onSelect({ type: 'node', id: node.id })
     if (readOnly) return
 
     capturePointer(event.pointerId)
     const point = toWorld(event.clientX, event.clientY)
     const members = moveIds
-      .map((id) => nodes.find((candidate) => candidate.id === id))
+      .map((id: string) => nodes.find((candidate) => candidate.id === id))
       .filter((candidate): candidate is DeviceNode => Boolean(candidate))
       .map((member) => ({ id: member.id, x: member.x, y: member.y }))
 
@@ -583,10 +592,37 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     if (event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
+
+    const additive = event.shiftKey || event.ctrlKey || event.metaKey
+    if (additive) {
+      let nodeIds: string[] = []
+      let groupIds: string[] = []
+      if (selection?.type === 'items') {
+        nodeIds = selection.nodeIds
+        groupIds = selection.groupIds
+      } else if (selection?.type === 'nodes') {
+        nodeIds = selection.ids
+      } else if (selection?.type === 'node') {
+        nodeIds = [selection.id]
+      } else if (selection?.type === 'group') {
+        groupIds = [selection.id]
+      }
+      const nextGroupIds = groupIds.includes(group.id)
+        ? groupIds.filter((id) => id !== group.id)
+        : [...groupIds, group.id]
+      const total = nodeIds.length + nextGroupIds.length
+      if (total === 0) onSelect(null)
+      else if (nodeIds.length === 1 && nextGroupIds.length === 0) onSelect({ type: 'node', id: nodeIds[0] })
+      else if (nodeIds.length === 0 && nextGroupIds.length === 1) onSelect({ type: 'group', id: nextGroupIds[0] })
+      else onSelect({ type: 'items', nodeIds, groupIds: nextGroupIds })
+      return
+    }
+
     onSelect({ type: 'group', id: group.id })
     if (readOnly) return
 
-    const members = group.nodeIds
+    const memberIds = collectGroupNodeIds(group.id)
+    const members = memberIds
       .map((id) => nodes.find((candidate) => candidate.id === id))
       .filter((candidate): candidate is DeviceNode => Boolean(candidate))
       .map((member) => ({ id: member.id, x: member.x, y: member.y }))
@@ -795,12 +831,29 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const isNodeSelected = (id: string) => {
     if (selection?.type === 'node') return selection.id === id
     if (selection?.type === 'nodes') return selection.ids.includes(id)
+    if (selection?.type === 'items') return selection.nodeIds.includes(id)
     return false
   }
 
+  const groupById = new Map(groups.map((g) => [g.id, g]))
+  const collectGroupNodeIds = (groupId: string, seen = new Set<string>()): string[] => {
+    if (seen.has(groupId)) return []
+    seen.add(groupId)
+    const g = groupById.get(groupId)
+    if (!g) return []
+    const ids = [...g.nodeIds]
+    for (const childId of g.groupIds ?? []) {
+      ids.push(...collectGroupNodeIds(childId, seen))
+    }
+    return [...new Set(ids)]
+  }
+  const directMemberCount = (group: DeviceGroup) =>
+    group.nodeIds.length + (group.groupIds ?? []).length
+
   const groupBoxes = groups
     .map((group) => {
-      const members = group.nodeIds
+      const memberIds = collectGroupNodeIds(group.id)
+      const members = memberIds
         .map((id) => nodeById.get(id))
         .filter((node): node is DeviceNode => Boolean(node))
       if (members.length === 0) return null
@@ -820,6 +873,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
 
       return {
         group,
+        memberCount: directMemberCount(group),
         x: minX - GROUP_PADDING_X,
         y: minY - GROUP_PADDING_TOP,
         width: maxX - minX + GROUP_PADDING_X * 2,
@@ -873,9 +927,10 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
           transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
         }}
       >
-        {groupBoxes.map(({ group, x, y, width, height }) => {
+        {groupBoxes.map(({ group, memberCount, x, y, width, height }) => {
           const selected =
-            selection?.type === 'group' && selection.id === group.id
+            (selection?.type === 'group' && selection.id === group.id) ||
+            (selection?.type === 'items' && selection.groupIds.includes(group.id))
           return (
             <div
               key={group.id}
@@ -902,7 +957,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
               >
                 <span className="group-box-dot" />
                 <span className="group-box-name">{group.name || t('canvas.groupDefault')}</span>
-                <span className="group-box-count">{group.nodeIds.length}</span>
+                <span className="group-box-count">{memberCount}</span>
               </div>
             </div>
           )

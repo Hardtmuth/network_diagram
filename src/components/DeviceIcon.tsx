@@ -182,6 +182,34 @@ export function DeviceIcon({ kind, size = 22 }: DeviceIconProps) {
           <path d="M10 16.5h4" />
         </svg>
       )
+    case 'recorder':
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="6" width="19" height="10" rx="2" />
+          <path d="M6 16v2.5M18 16v2.5M5 18.5h14" />
+          <circle cx="8" cy="11" r="1.2" />
+          <path d="M11 9.5h6M11 12.5h4" />
+        </svg>
+      )
+    case 'ipCamera':
+      return (
+        <svg {...common}>
+          <rect x="7" y="8" width="11" height="8" rx="2" />
+          <path d="M18 10.5 21 9v6l-3-1.5Z" />
+          <path d="M7 12H4.5a2 2 0 0 0-2 2v2" />
+          <circle cx="11.5" cy="12" r="1.5" />
+        </svg>
+      )
+    case 'analogCamera':
+      return (
+        <svg {...common}>
+          <rect x="6.5" y="8" width="11" height="8" rx="2" />
+          <path d="M17.5 10.5 21 9v6l-3.5-1.5Z" />
+          <path d="M6.5 12H4a1.5 1.5 0 0 0 0 3h1.5" />
+          <circle cx="11" cy="12" r="1.5" />
+          <path d="M3.5 17.5h4" />
+        </svg>
+      )
     case 'other':
       return (
         <svg {...common}>

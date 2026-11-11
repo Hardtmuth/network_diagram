@@ -21,6 +21,7 @@ export function Sidebar({ onQuickAdd, onHide, readOnly = false }: SidebarProps) 
     if (label === 'Сеть') return t('categories.network')
     if (label === 'Серверы и NAS') return t('categories.servers')
     if (label === 'Клиенты') return t('categories.clients')
+    if (label === 'Видеонаблюдение') return t('categories.surveillance')
     return label
   }
 

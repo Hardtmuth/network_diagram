@@ -386,6 +386,7 @@ export function createDemoDiagram(): DiagramSnapshot {
         name: 'Серверная',
         color: '#2dd4bf',
         nodeIds: ['demo-server', 'demo-nas'],
+        groupIds: [],
       },
     ],
   }

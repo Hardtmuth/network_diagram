@@ -177,6 +177,12 @@ export function DeviceNode({
         </p>
       )}
 
+      {node.kind === 'recorder' && (
+        <p className="node-model">
+          {t(`inspector.recorder.${node.recorderType ?? 'dvr'}`)}
+        </p>
+      )}
+
       {node.kind === 'container' && node.containerService?.trim() && (
         <p className="node-model">{node.containerService}</p>
       )}
@@ -237,6 +243,8 @@ export function DeviceNode({
         const canShowNetwork =
           node.kind !== 'usb' &&
           node.kind !== 'ups' &&
+          node.kind !== 'analogCamera' &&
+          !(node.kind === 'recorder' && (node.recorderType ?? 'dvr') === 'dvr') &&
           !(node.kind === 'printer' && (node.printerInterface ?? 'ethernet') === 'usb')
         const showIp = canShowNetwork && Boolean(node.ip?.trim())
         const showMac =

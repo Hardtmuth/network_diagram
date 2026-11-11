@@ -62,6 +62,7 @@ interface InspectorProps {
   group?: DeviceGroup
   groupNodes: DeviceNode[]
   selectedNodes: DeviceNode[]
+  selectedGroupsList?: DeviceGroup[]
   groups: DeviceGroup[]
   nodeCount: number
   linkCount: number
@@ -73,7 +74,7 @@ interface InspectorProps {
   onDeleteLink: (id: string) => void
   onUpdateGroup: (id: string, patch: Partial<DeviceGroup>) => void
   onAssignGroup: (nodeId: string, groupId: string | null) => void
-  onCreateGroup: (ids: string[]) => void
+  onCreateGroup: (nodeIds: string[], groupIds?: string[]) => void
   onSelectNodes: (ids: string[]) => void
   onDeleteNodes: (ids: string[]) => void
   onUngroup: (id: string) => void
@@ -91,6 +92,7 @@ export function Inspector({
   group,
   groupNodes,
   selectedNodes,
+  selectedGroupsList = [],
   groups,
   nodeCount,
   linkCount,
@@ -111,15 +113,16 @@ export function Inspector({
   readOnly = false,
 }: InspectorProps) {
   const { t } = useTranslation()
+  const multiCount = selectedNodes.length + selectedGroupsList.length
   const hasSelection =
-    Boolean(node || link || group) || selectedNodes.length > 0
+    Boolean(node || link || group) || multiCount > 0
   const title = node
     ? t('inspector.titleDevice')
     : link
       ? t('inspector.titleLink')
       : group
         ? t('inspector.titleGroup')
-        : selectedNodes.length > 0
+        : multiCount > 0
           ? t('inspector.titleSelection')
           : t('inspector.titleParams')
 
@@ -183,6 +186,7 @@ export function Inspector({
           <GroupForm
             group={group}
             groupNodes={groupNodes}
+            groups={groups}
             onUpdateGroup={onUpdateGroup}
             onSelectNodes={onSelectNodes}
             onUngroup={onUngroup}
@@ -190,17 +194,19 @@ export function Inspector({
           />
         )}
 
-        {!node && !link && !group && selectedNodes.length > 0 && (
+        {!node && !link && !group && multiCount > 0 && (
           <MultiSelectionForm
             selectedNodes={selectedNodes}
+            selectedGroupsList={selectedGroupsList}
             onCreateGroup={onCreateGroup}
             onSelectNodes={onSelectNodes}
             onDeleteNodes={onDeleteNodes}
+            onUngroup={onUngroup}
             readOnly={readOnly}
           />
         )}
 
-        {!node && !link && !group && selectedNodes.length === 0 && (
+        {!node && !link && !group && multiCount === 0 && (
           <EmptyInspector
             nodeCount={nodeCount}
             linkCount={linkCount}
@@ -300,6 +306,26 @@ function NodeForm({
               onUpdateNode(node.id, { model: event.target.value })
             }
            disabled={readOnly} />
+        </div>
+      )}
+
+      {node.kind === 'recorder' && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-recorder-type">
+            {t('inspector.recorderType')}
+          </label>
+          <select
+            id="node-recorder-type"
+            value={node.recorderType ?? 'dvr'}
+            onChange={(event) =>
+              onUpdateNode(node.id, {
+                recorderType: event.target.value as 'dvr' | 'nvr',
+              })
+            }
+           disabled={readOnly}>
+            <option value="dvr">{t('inspector.recorder.dvr')}</option>
+            <option value="nvr">{t('inspector.recorder.nvr')}</option>
+          </select>
         </div>
       )}
 
@@ -465,6 +491,8 @@ function NodeForm({
       {node.kind !== 'usb' &&
         node.kind !== 'isp' &&
         node.kind !== 'ups' &&
+        node.kind !== 'analogCamera' &&
+        !(node.kind === 'recorder' && (node.recorderType ?? 'dvr') === 'dvr') &&
         !(node.kind === 'printer' && (node.printerInterface ?? 'ethernet') === 'usb') && (
           <>
             <div className="field">
@@ -1501,6 +1529,7 @@ function LinkForm({
 interface GroupFormProps {
   group: DeviceGroup
   groupNodes: DeviceNode[]
+  groups: DeviceGroup[]
   onUpdateGroup: (id: string, patch: Partial<DeviceGroup>) => void
   onSelectNodes: (ids: string[]) => void
   onUngroup: (id: string) => void
@@ -1510,12 +1539,14 @@ interface GroupFormProps {
 function GroupForm({
   group,
   groupNodes,
+  groups,
   onUpdateGroup,
   onSelectNodes,
   onUngroup,
   readOnly = false,
 }: GroupFormProps) {
-  const { t, i18n } = useTranslation()
+  const childGroups = groups.filter((g) => (group.groupIds ?? []).includes(g.id))
+  const { t } = useTranslation()
   const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
   return (
     <>
@@ -1529,10 +1560,8 @@ function GroupForm({
         <span className="group-preview-text">
           <strong>{group.name || t('canvas.groupDefault')}</strong>
           <span>
-            {group.nodeIds.length}{' '}
-            {i18n.resolvedLanguage === 'en'
-              ? (group.nodeIds.length === 1 ? t('inspector.deviceWord_one') : t('inspector.deviceWord_many'))
-              : (() => { const n=group.nodeIds.length,m10=n%10,m100=n%100; return m10===1&&m100!==11?t('inspector.deviceWord_one'):m10>=2&&m10<=4&&(m100<12||m100>14)?t('inspector.deviceWord_few'):t('inspector.deviceWord_many') })()}
+            {group.nodeIds.length + (group.groupIds ?? []).length}{' '}
+            {t('inspector.groupMembers').toLowerCase()}
           </span>
         </span>
       </div>
@@ -1569,8 +1598,22 @@ function GroupForm({
       </div>
 
       <div className="field">
-        <span className="field-label">{t('inspector.groupDevices')}</span>
+        <span className="field-label">{t('inspector.groupMembers')}</span>
         <ul className="member-list">
+          {childGroups.map((cg) => (
+            <li key={cg.id}>
+              <div className="member-row">
+                <span className="member-icon" style={{ '--device-color': cg.color } as CSSProperties}>
+                  <Icon name="group" size={15} />
+                </span>
+                <span className="member-text">
+                  <strong>{cg.name || t('canvas.groupDefault')}</strong>
+                  <span>{t('inspector.titleGroup')}</span>
+                </span>
+                <code>{cg.nodeIds.length + (cg.groupIds ?? []).length}</code>
+              </div>
+            </li>
+          ))}
           {groupNodes.map((member) => (
             <li key={member.id}>
               <button
@@ -1620,25 +1663,30 @@ function GroupForm({
 
 interface MultiSelectionFormProps {
   selectedNodes: DeviceNode[]
-  onCreateGroup: (ids: string[]) => void
+  selectedGroupsList: DeviceGroup[]
+  onCreateGroup: (nodeIds: string[], groupIds?: string[]) => void
   onSelectNodes: (ids: string[]) => void
   onDeleteNodes: (ids: string[]) => void
+  onUngroup: (id: string) => void
   readOnly?: boolean
 }
 
 function MultiSelectionForm({
   selectedNodes,
+  selectedGroupsList,
   onCreateGroup,
   onSelectNodes,
   onDeleteNodes,
+  onUngroup,
   readOnly = false,
 }: MultiSelectionFormProps) {
   const { t } = useTranslation()
   const deviceLabel = (kind: DeviceKind) => t(`devices.${kind}.label`, { defaultValue: DEVICE_META[kind].label })
+  const total = selectedNodes.length + selectedGroupsList.length
   return (
     <>
       <div className="multi-summary">
-        <span className="multi-badge">{selectedNodes.length}</span>
+        <span className="multi-badge">{total}</span>
         <span className="multi-summary-text">
           <strong>{t('inspector.multiSelected')}</strong>
           <span>
@@ -1648,6 +1696,28 @@ function MultiSelectionForm({
       </div>
 
       <ul className="member-list is-multi">
+        {selectedGroupsList.map((g) => (
+          <li key={g.id}>
+            <button
+              type="button"
+              className="member-row"
+              onClick={() => onUngroup(g.id)}
+              title={t('inspector.ungroup')}
+            >
+              <span
+                className="member-icon"
+                style={{ '--device-color': g.color } as CSSProperties}
+              >
+                <Icon name="group" size={15} />
+              </span>
+              <span className="member-text">
+                <strong>{g.name || t('canvas.groupDefault')}</strong>
+                <span>{t('inspector.titleGroup')}</span>
+              </span>
+              <code>{g.nodeIds.length + (g.groupIds ?? []).length}</code>
+            </button>
+          </li>
+        ))}
         {selectedNodes.map((member) => (
           <li key={member.id}>
             <button
@@ -1681,8 +1751,8 @@ function MultiSelectionForm({
         <button
           type="button"
           className="primary-button is-wide"
-          onClick={() => onCreateGroup(selectedNodes.map((member) => member.id))}
-          disabled={selectedNodes.length < 2}
+          onClick={() => onCreateGroup(selectedNodes.map((m) => m.id), selectedGroupsList.map((g) => g.id))}
+          disabled={total < 2 || readOnly}
         >
           <Icon name="group" size={15} />
           {t('inspector.mergeGroup')}
@@ -1690,7 +1760,10 @@ function MultiSelectionForm({
         <button
           type="button"
           className="danger-button is-wide"
-          onClick={() => onDeleteNodes(selectedNodes.map((member) => member.id))}
+          onClick={() => {
+            if (selectedNodes.length > 0) onDeleteNodes(selectedNodes.map((m) => m.id))
+            selectedGroupsList.forEach((g) => onUngroup(g.id))
+          }}
          disabled={readOnly}>
           <Icon name="trash" size={15} />
           {t('inspector.deleteSelected')}

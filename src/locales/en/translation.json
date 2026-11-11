@@ -249,7 +249,12 @@
     "portWord_many": "ports",
     "diskWord_one": "disk",
     "diskWord_few": "disks",
-    "diskWord_many": "disks"
+    "diskWord_many": "disks",
+    "recorderType": "Recorder type",
+    "recorder": {
+      "dvr": "DVR",
+      "nvr": "NVR"
+    }
   },
   "toast": {
     "diagramDeleted": "Diagram deleted",
@@ -348,19 +353,33 @@
     "other": {
       "label": "Other",
       "hint": "Other device"
+    },
+    "recorder": {
+      "label": "Video recorder",
+      "hint": "DVR / NVR"
+    },
+    "ipCamera": {
+      "label": "IP camera",
+      "hint": "Network camera"
+    },
+    "analogCamera": {
+      "label": "Analog camera",
+      "hint": "Coaxial cable camera"
     }
   },
   "categories": {
     "network": "Network",
     "servers": "Servers & NAS",
-    "clients": "Clients"
+    "clients": "Clients",
+    "surveillance": "Surveillance"
   },
   "links": {
     "ethernet": "Ethernet",
     "fiber": "Fiber / DAC",
     "wifi": "Wi-Fi",
     "usb": "USB / other",
-    "vpn": "VPN tunnel"
+    "vpn": "VPN tunnel",
+    "coaxial": "Coaxial cable"
   },
   "vpn": {
     "l2tp": {

@@ -100,6 +100,7 @@ export function TableView({
 
   const nodeDetails = (node: DeviceNode) => {
     if (node.kind === 'isp') return t(`inspector.isp.${node.ispConnectionType ?? 'pppoe'}`)
+    if (node.kind === 'recorder') return t(`inspector.recorder.${node.recorderType ?? 'dvr'}`)
     if (node.kind === 'container') return node.containerService || '—'
     return node.model || '—'
   }
@@ -127,6 +128,9 @@ export function TableView({
       if (node.routerDhcpSubnets && node.routerDhcpSubnets.length > 0) {
         parts.push(`DHCP: ${node.routerDhcpSubnets.length}`)
       }
+    }
+    if (node.kind === 'recorder') {
+      parts.push(t(`inspector.recorder.${node.recorderType ?? 'dvr'}`))
     }
     if (node.kind === 'ap') {
       parts.push(`Wi-Fi: ${node.wifiNetworks?.length ?? 0} SSID`)
@@ -352,14 +356,14 @@ export function TableView({
                 ) : filteredGroups.map((group) => (
                   <tr
                     key={group.id}
-                    className={selection?.type === 'group' && selection.id === group.id ? 'is-selected' : ''}
+                    className={(selection?.type === 'group' && selection.id === group.id) || (selection?.type === 'items' && selection.groupIds.includes(group.id)) ? 'is-selected' : ''}
                     onClick={() => onSelect({ type: 'group', id: group.id })}
                   >
                     <td className="is-strong">
                       <span className="table-group-name"><span className="table-group-dot" style={{ background: group.color }} />{group.name || t('canvas.groupDefault')}</span>
                     </td>
-                    <td>{group.nodeIds.length}</td>
-                    <td className="table-cell-wrap">{group.nodeIds.map((id) => nodeDisplayName(nodeById.get(id))).join(', ') || '—'}</td>
+                    <td>{group.nodeIds.length + (group.groupIds ?? []).length}</td>
+                    <td className="table-cell-wrap">{[...(group.groupIds ?? []).map((id) => groups.find((g)=>g.id===id)?.name || t('canvas.groupDefault')), ...group.nodeIds.map((id) => nodeDisplayName(nodeById.get(id)))].join(', ') || '—'}</td>
                     <td className="table-actions-cell" onClick={(e) => e.stopPropagation()}>
                       <button type="button" className="table-action" title={t('table.showOnDiagram')} onClick={() => onShowOnDiagram({ type: 'group', id: group.id })}>
                         <Icon name="topology" size={14} />
