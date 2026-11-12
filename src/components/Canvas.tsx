@@ -1228,6 +1228,14 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   }}
                 />
                 <path
+                  className="edge-halo"
+                  d={geometry.d}
+                  fill="none"
+                  strokeWidth={selected ? 6 : 5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
                   className="edge-line"
                   d={geometry.d}
                   fill="none"

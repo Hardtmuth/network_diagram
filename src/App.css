@@ -3758,3 +3758,13 @@ kbd {
 .table-type-chip-icon {
   display: inline-flex;
 }
+
+.edge-halo {
+  stroke: #070b13;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+[data-theme='light'] .edge-halo {
+  stroke: #f2f5fa;
+}
