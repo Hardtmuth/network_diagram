@@ -45,6 +45,10 @@ import type {
 } from './types'
 
 const THEME_KEY = 'homelab-theme'
+const INSPECTOR_WIDTH_KEY = 'homelab-inspector-width'
+const DEFAULT_INSPECTOR_WIDTH = 318
+const MIN_INSPECTOR_WIDTH = 260
+const MAX_INSPECTOR_WIDTH = 640
 
 type Theme = 'dark' | 'light'
 type SaveState = 'saved' | 'saving'
@@ -405,6 +409,18 @@ function loadTheme(): Theme {
   return 'dark'
 }
 
+function loadInspectorWidth(): number {
+  try {
+    const stored = window.localStorage.getItem(INSPECTOR_WIDTH_KEY)
+    if (!stored) return DEFAULT_INSPECTOR_WIDTH
+    const value = Number.parseInt(stored, 10)
+    if (!Number.isFinite(value)) return DEFAULT_INSPECTOR_WIDTH
+    return Math.min(MAX_INSPECTOR_WIDTH, Math.max(MIN_INSPECTOR_WIDTH, value))
+  } catch {
+    return DEFAULT_INSPECTOR_WIDTH
+  }
+}
+
 function createId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID()
@@ -435,6 +451,7 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [showInspector, setShowInspector] = useState(true)
+  const [inspectorWidth, setInspectorWidth] = useState<number>(loadInspectorWidth)
   const [readOnly, setReadOnly] = useState(false)
   const [editorView, setEditorView] = useState<'diagram' | 'table'>('diagram')
   const [pingStatuses, setPingStatuses] = useState<Record<string, 'up' | 'down' | 'unknown'>>({})
@@ -486,6 +503,36 @@ function App() {
     window.addEventListener('pointerdown', handlePointerDown)
     return () => window.removeEventListener('pointerdown', handlePointerDown)
   }, [searchOpen])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(INSPECTOR_WIDTH_KEY, String(inspectorWidth))
+    } catch {
+      // ignore
+    }
+  }, [inspectorWidth])
+
+  const handleInspectorResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const startX = event.clientX
+    const startWidth = inspectorWidth
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const delta = startX - moveEvent.clientX
+      const next = Math.min(MAX_INSPECTOR_WIDTH, Math.max(MIN_INSPECTOR_WIDTH, startWidth + delta))
+      setInspectorWidth(next)
+    }
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+  }, [inspectorWidth])
 
   const persistStore = useCallback((next: DiagramsStore) => {
     setStore(next)
@@ -1585,6 +1632,8 @@ function App() {
                 nodeCount={nodes.length}
                 linkCount={connections.length}
                 groupCount={groups.length}
+                width={inspectorWidth}
+                onResizeStart={handleInspectorResizeStart}
                 onUpdateNode={updateNode}
                 onDeleteNode={deleteNode}
                 onDuplicateNode={duplicateNode}

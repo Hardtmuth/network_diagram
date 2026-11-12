@@ -118,6 +118,8 @@ interface AlignGuides {
 const GROUP_PADDING_X = 26
 const GROUP_PADDING_TOP = 26
 const GROUP_PADDING_BOTTOM = 26
+const NESTED_GROUP_HEADER_OFFSET = 28
+const NESTED_GROUP_SIDE_OFFSET = 14
 const SNAP_THRESHOLD = 6
 
 const clamp = (value: number, min: number, max: number) =>
@@ -1070,6 +1072,25 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const directMemberCount = (group: DeviceGroup) =>
     group.nodeIds.length + (group.groupIds ?? []).length
 
+  const nestedGroupDepthById = new Map<string, number>()
+  const getNestedGroupDepth = (groupId: string, seen = new Set<string>()): number => {
+    const cached = nestedGroupDepthById.get(groupId)
+    if (cached !== undefined) return cached
+    if (seen.has(groupId)) return 0
+    seen.add(groupId)
+    const g = groupById.get(groupId)
+    if (!g || (g.groupIds ?? []).length === 0) {
+      nestedGroupDepthById.set(groupId, 0)
+      return 0
+    }
+    let depth = 0
+    for (const childId of g.groupIds ?? []) {
+      depth = Math.max(depth, 1 + getNestedGroupDepth(childId, new Set(seen)))
+    }
+    nestedGroupDepthById.set(groupId, depth)
+    return depth
+  }
+
   const groupBoxes = groups
     .map((group) => {
       const memberIds = collectGroupNodeIds(group.id)
@@ -1091,13 +1112,20 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
         maxY = Math.max(maxY, node.y + size.h)
       }
 
+      const nestedDepth = getNestedGroupDepth(group.id)
+      const extraTop = nestedDepth * NESTED_GROUP_HEADER_OFFSET
+      const extraSides = nestedDepth * NESTED_GROUP_SIDE_OFFSET
+      const paddingTop = GROUP_PADDING_TOP + extraTop
+      const paddingX = GROUP_PADDING_X + extraSides
+      const paddingBottom = GROUP_PADDING_BOTTOM + extraSides
+
       return {
         group,
         memberCount: directMemberCount(group),
-        x: minX - GROUP_PADDING_X,
-        y: minY - GROUP_PADDING_TOP,
-        width: maxX - minX + GROUP_PADDING_X * 2,
-        height: maxY - minY + GROUP_PADDING_TOP + GROUP_PADDING_BOTTOM,
+        x: minX - paddingX,
+        y: minY - paddingTop,
+        width: maxX - minX + paddingX * 2,
+        height: maxY - minY + paddingTop + paddingBottom,
       }
     })
     .filter((box): box is NonNullable<typeof box> => Boolean(box))

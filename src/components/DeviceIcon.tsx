@@ -210,6 +210,27 @@ export function DeviceIcon({ kind, size = 22 }: DeviceIconProps) {
           <path d="M3.5 17.5h4" />
         </svg>
       )
+    case 'mediaConverter':
+      return (
+        <svg {...common}>
+          <rect x="3" y="7" width="18" height="10" rx="2" />
+          <path d="M8 7v10M16 7v10" />
+          <path d="M5 12h1.5M17.5 12H19" />
+          <path d="M10 10.5h4M10 13.5h4" />
+          <circle cx="5.5" cy="12" r="0.8" />
+          <circle cx="18.5" cy="12" r="0.8" />
+        </svg>
+      )
+    case 'gponTerminal':
+      return (
+        <svg {...common}>
+          <rect x="4" y="8" width="16" height="8" rx="2" />
+          <path d="M2.5 12h1.5M20 12h1.5" />
+          <path d="M7 10.5h.01M7 13.5h.01M10 10.5h.01M10 13.5h.01" />
+          <path d="M13.5 10.5h3M13.5 13.5h3" />
+          <path d="M3.5 9.5c1.2.8 1.2 4.2 0 5" />
+        </svg>
+      )
     case 'other':
       return (
         <svg {...common}>

@@ -7,7 +7,7 @@ import type {
   VpnProtocol,
 } from './types'
 
-export type DeviceCategory = 'Сеть' | 'Серверы и NAS' | 'Клиенты' | 'Видеонаблюдение'
+export type DeviceCategory = 'Сеть' | 'Серверы и NAS' | 'Клиенты' | 'Видеонаблюдение' | 'Другое'
 
 export interface DeviceMeta {
   kind: DeviceKind
@@ -70,7 +70,7 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
   usb: {
     kind: 'usb',
     label: 'USB накопитель',
-    category: 'Серверы и NAS',
+    category: 'Другое',
     color: '#eab308',
     hint: 'Съёмное хранилище',
   },
@@ -126,21 +126,21 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
   sbc: {
     kind: 'sbc',
     label: 'Одноплатник',
-    category: 'Клиенты',
+    category: 'Другое',
     color: '#4ade80',
     hint: 'Raspberry Pi / Banana Pi',
   },
   ups: {
     kind: 'ups',
     label: 'ИБП',
-    category: 'Сеть',
+    category: 'Другое',
     color: '#f59e0b',
     hint: 'Источник бесперебойного питания',
   },
   printer3d: {
     kind: 'printer3d',
     label: '3D-принтер',
-    category: 'Клиенты',
+    category: 'Другое',
     color: '#c084fc',
     hint: 'Аддитивная печать',
   },
@@ -165,28 +165,46 @@ export const DEVICE_META: Record<DeviceKind, DeviceMeta> = {
     color: '#94a3b8',
     hint: 'Камера по коаксиальному кабелю',
   },
+  mediaConverter: {
+    kind: 'mediaConverter',
+    label: 'Медиа-конвертер',
+    category: 'Другое',
+    color: '#f97316',
+    hint: 'Преобразование среды передачи',
+  },
+  gponTerminal: {
+    kind: 'gponTerminal',
+    label: 'GPON-терминал',
+    category: 'Другое',
+    color: '#06b6d4',
+    hint: 'Оптический терминал абонента',
+  },
   other: {
     kind: 'other',
     label: 'Другое',
-    category: 'Клиенты',
+    category: 'Другое',
     color: '#a3a3a3',
     hint: 'Прочее устройство',
   },
 }
 
 export const DEVICE_GROUPS: { label: DeviceCategory; kinds: DeviceKind[] }[] = [
-  { label: 'Сеть', kinds: ['router', 'switch', 'ap', 'isp', 'ups'] },
+  { label: 'Сеть', kinds: ['router', 'switch', 'ap', 'isp'] },
   {
     label: 'Серверы и NAS',
-    kinds: ['server', 'nas', 'vm', 'container', 'usb'],
+    kinds: ['server', 'nas', 'vm', 'container'],
+  },
+  {
+    label: 'Клиенты',
+    kinds: ['pc', 'laptop', 'nettop', 'phone', 'mobile', 'printer'],
   },
   {
     label: 'Видеонаблюдение',
     kinds: ['recorder', 'ipCamera', 'analogCamera'],
   },
   {
-    label: 'Клиенты',
-    kinds: ['pc', 'laptop', 'nettop', 'sbc', 'phone', 'mobile', 'printer', 'printer3d', 'other'],
+    label: 'Другое',
+    kinds: ['printer3d', 'sbc', 'usb', 'ups', 'mediaConverter', 'gponTerminal', 'other'],
   },
 ]
 

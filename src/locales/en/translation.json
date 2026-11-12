@@ -402,13 +402,22 @@
     "analogCamera": {
       "label": "Analog camera",
       "hint": "Coaxial cable camera"
+    },
+    "mediaConverter": {
+      "label": "Media converter",
+      "hint": "Media conversion device"
+    },
+    "gponTerminal": {
+      "label": "GPON terminal",
+      "hint": "Optical network terminal"
     }
   },
   "categories": {
     "network": "Network",
     "servers": "Servers & NAS",
     "clients": "Clients",
-    "surveillance": "Surveillance"
+    "surveillance": "Surveillance",
+    "other": "Other"
   },
   "links": {
     "ethernet": "Ethernet",

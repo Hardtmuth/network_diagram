@@ -235,6 +235,28 @@
   color: var(--muted-soft);
 }
 
+.shelf-group-title.is-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.shelf-group-title.is-toggle:hover {
+  color: var(--text);
+}
+
+.shelf-group-chevron {
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
 .shelf-item {
   display: flex;
   align-items: center;
@@ -864,12 +886,41 @@
 /* ---------- Inspector ---------- */
 
 .inspector {
+  position: relative;
   flex: 0 0 318px;
   width: 318px;
   min-height: 0;
   overflow-y: auto;
   background: linear-gradient(180deg, rgba(10, 16, 27, 0.94), rgba(7, 11, 19, 0.98));
   border-left: 1px solid var(--border);
+}
+
+.inspector-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 5;
+  touch-action: none;
+}
+
+.inspector-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.inspector-resize-handle:hover::after,
+.inspector-resize-handle:active::after {
+  background: rgba(94, 234, 212, 0.35);
 }
 
 .inspector-inner {
@@ -1316,11 +1367,6 @@ kbd {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1240px) {
-  .inspector {
-    flex-basis: 292px;
-    width: 292px;
-  }
-
   .sidebar {
     flex-basis: 226px;
     width: 226px;
@@ -1362,7 +1408,8 @@ kbd {
     right: 0;
     bottom: 0;
     z-index: 25;
-    width: min(310px, 88vw);
+    width: min(310px, 88vw) !important;
+    flex-basis: auto !important;
     box-shadow: -28px 0 70px rgba(0, 0, 0, 0.55);
     transform: translateX(104%);
     transition: transform 0.22s ease;
@@ -1370,6 +1417,10 @@ kbd {
 
   .inspector.is-open {
     transform: translateX(0);
+  }
+
+  .inspector-resize-handle {
+    display: none;
   }
 
   .sidebar {
@@ -1432,9 +1483,21 @@ kbd {
   }
 
   .sidebar-header,
-  .sidebar-foot,
+  .sidebar-foot {
+    display: none;
+  }
+
   .shelf-group-title {
     display: none;
+  }
+
+  .shelf-group-title.is-toggle {
+    display: inline-flex;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(148, 163, 184, 0.04);
+    white-space: nowrap;
   }
 
   .shelf {

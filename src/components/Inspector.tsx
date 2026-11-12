@@ -73,6 +73,8 @@ interface InspectorProps {
   nodeCount: number
   linkCount: number
   groupCount: number
+  width?: number
+  onResizeStart?: (event: React.PointerEvent<HTMLDivElement>) => void
   onUpdateNode: (id: string, patch: Partial<DeviceNode>) => void
   onDeleteNode: (id: string) => void
   onDuplicateNode: (id: string) => void
@@ -107,6 +109,8 @@ export function Inspector({
   nodeCount,
   linkCount,
   groupCount,
+  width,
+  onResizeStart,
   onUpdateNode,
   onDeleteNode,
   onDuplicateNode,
@@ -139,7 +143,20 @@ export function Inspector({
           : t('inspector.titleParams')
 
   return (
-    <aside className={`inspector ${hasSelection ? 'is-open' : ''}`}>
+    <aside
+      className={`inspector ${hasSelection ? 'is-open' : ''}`}
+      style={width ? ({ width, flexBasis: width } as CSSProperties) : undefined}
+    >
+      {onResizeStart && (
+        <div
+          className="inspector-resize-handle"
+          onPointerDown={onResizeStart}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize inspector"
+          title="Resize inspector"
+        />
+      )}
       <div className="inspector-inner">
         <header className="inspector-head">
           <div>

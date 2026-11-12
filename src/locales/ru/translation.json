@@ -402,13 +402,22 @@
     "analogCamera": {
       "label": "Аналоговая камера",
       "hint": "Камера по коаксиальному кабелю"
+    },
+    "mediaConverter": {
+      "label": "Медиа-конвертер",
+      "hint": "Преобразование среды передачи"
+    },
+    "gponTerminal": {
+      "label": "GPON-терминал",
+      "hint": "Оптический терминал абонента"
     }
   },
   "categories": {
     "network": "Сеть",
     "servers": "Серверы и NAS",
     "clients": "Клиенты",
-    "surveillance": "Видеонаблюдение"
+    "surveillance": "Видеонаблюдение",
+    "other": "Другое"
   },
   "links": {
     "ethernet": "Ethernet",

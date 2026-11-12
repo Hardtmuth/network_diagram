@@ -20,6 +20,8 @@ export type DeviceKind =
   | 'recorder'
   | 'ipCamera'
   | 'analogCamera'
+  | 'mediaConverter'
+  | 'gponTerminal'
   | 'other'
 
 export type RecorderType = 'dvr' | 'nvr'
