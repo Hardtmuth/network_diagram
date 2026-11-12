@@ -3659,3 +3659,11 @@ kbd {
 .mgmt-link-anchor:hover {
   text-decoration: underline;
 }
+
+.ssh-link-row {
+  grid-template-columns: 92px 1fr 72px;
+}
+
+.mgmt-link-actions {
+  margin-top: 8px;
+}

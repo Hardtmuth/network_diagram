@@ -198,6 +198,11 @@ function parseNode(value: unknown): DeviceNode | null {
   if (typeof record.mgmtPort === 'string' || typeof record.mgmtPort === 'number') {
     node.mgmtPort = String(record.mgmtPort)
   }
+  if (typeof record.sshUser === 'string') node.sshUser = record.sshUser
+  if (typeof record.sshHost === 'string') node.sshHost = record.sshHost
+  if (typeof record.sshPort === 'string' || typeof record.sshPort === 'number') {
+    node.sshPort = String(record.sshPort)
+  }
 
   if (typeof record.os === 'string') node.os = record.os
   if (typeof value.ip === 'string') node.ip = value.ip

@@ -281,6 +281,7 @@ function NodeForm({
     connections: false,
     ap: false,
     router: false,
+    connectivity: true,
   })
   const toggle = (key: keyof typeof open) => setOpen((s) => ({ ...s, [key]: !s[key] }))
 
@@ -495,60 +496,160 @@ function NodeForm({
               const host = (node.mgmtHost ?? node.ip ?? '').trim()
               const port = (node.mgmtPort ?? '80').trim() || '80'
               const href = host ? `${protocol}://${host}${port ? `:${port}` : ''}` : ''
+
+              const sshUser = (node.sshUser ?? '').trim()
+              const sshHost = (node.sshHost ?? node.ip ?? '').trim()
+              const sshPort = (node.sshPort ?? '22').trim() || '22'
+              const sshAuthority = sshHost
+                ? `${sshUser ? `${encodeURIComponent(sshUser)}@` : ''}${sshHost}${sshPort ? `:${sshPort}` : ''}`
+                : ''
+              const sshHref = sshAuthority ? `ssh://${sshAuthority}` : ''
+              const sshCommand = sshHost
+                ? `ssh ${sshUser ? `${sshUser}@` : ''}${sshHost}${sshPort ? ` -p ${sshPort}` : ''}`
+                : ''
+
+              const copySshCommand = async () => {
+                if (!sshCommand) return
+                try {
+                  await navigator.clipboard.writeText(sshCommand)
+                } catch {
+                  // ignore clipboard errors
+                }
+              }
+
               return (
-                <div className="field">
-                  <label className="field-label">{t('inspector.managementLink')}</label>
-                  <div className="mgmt-link-row">
-                    <select
-                      value={protocol}
-                      onChange={(event) =>
-                        onUpdateNode(node.id, {
-                          mgmtProtocol: event.target.value as 'http' | 'https',
-                        })
-                      }
-                      disabled={readOnly}
-                      aria-label={t('inspector.mgmtProtocol')}
-                    >
-                      <option value="http">http</option>
-                      <option value="https">https</option>
-                    </select>
-                    <input
-                      className="mono-input mgmt-host-input"
-                      value={node.mgmtHost ?? node.ip ?? ''}
-                      placeholder={node.ip || '192.168.1.1'}
-                      spellCheck={false}
-                      onChange={(event) =>
-                        onUpdateNode(node.id, { mgmtHost: event.target.value })
-                      }
-                      disabled={readOnly}
-                      aria-label={t('inspector.mgmtHost')}
-                    />
-                    <input
-                      className="mono-input mgmt-port-input"
-                      value={node.mgmtPort ?? '80'}
-                      placeholder="80"
-                      inputMode="numeric"
-                      spellCheck={false}
-                      onChange={(event) =>
-                        onUpdateNode(node.id, { mgmtPort: event.target.value.replace(/[^\d]/g, '') })
-                      }
-                      disabled={readOnly}
-                      aria-label={t('inspector.mgmtPort')}
-                    />
-                  </div>
-                  {href ? (
-                    <a
-                      className="mgmt-link-anchor"
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t('inspector.openLink')}: {href}
-                    </a>
-                  ) : (
-                    <span className="field-hint">{t('inspector.pingNeedsIp')}</span>
+                <section className={`hw-section ${open.connectivity ? '' : 'is-collapsed'}`}>
+                  <button
+                    type="button"
+                    className="hw-section-head is-toggle"
+                    onClick={() => toggle('connectivity')}
+                  >
+                    <span className="hw-section-title">{t('inspector.connectionSection')}</span>
+                    <span className="hw-section-chevron" aria-hidden="true">
+                      {open.connectivity ? '▾' : '▸'}
+                    </span>
+                  </button>
+                  {open.connectivity && (
+                    <>
+                      <div className="field">
+                        <label className="field-label">{t('inspector.managementLink')}</label>
+                        <div className="mgmt-link-row">
+                          <select
+                            value={protocol}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, {
+                                mgmtProtocol: event.target.value as 'http' | 'https',
+                              })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.mgmtProtocol')}
+                          >
+                            <option value="http">http</option>
+                            <option value="https">https</option>
+                          </select>
+                          <input
+                            className="mono-input mgmt-host-input"
+                            value={node.mgmtHost ?? node.ip ?? ''}
+                            placeholder={node.ip || '192.168.1.1'}
+                            spellCheck={false}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, { mgmtHost: event.target.value })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.mgmtHost')}
+                          />
+                          <input
+                            className="mono-input mgmt-port-input"
+                            value={node.mgmtPort ?? '80'}
+                            placeholder="80"
+                            inputMode="numeric"
+                            spellCheck={false}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, { mgmtPort: event.target.value.replace(/[^\d]/g, '') })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.mgmtPort')}
+                          />
+                        </div>
+                        {href ? (
+                          <a
+                            className="mgmt-link-anchor"
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {t('inspector.openLink')}: {href}
+                          </a>
+                        ) : (
+                          <span className="field-hint">{t('inspector.pingNeedsIp')}</span>
+                        )}
+                      </div>
+
+                      <div className="field">
+                        <label className="field-label">{t('inspector.sshConnection')}</label>
+                        <div className="mgmt-link-row ssh-link-row">
+                          <input
+                            className="mono-input"
+                            value={node.sshUser ?? ''}
+                            placeholder="root"
+                            spellCheck={false}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, { sshUser: event.target.value })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.sshUser')}
+                          />
+                          <input
+                            className="mono-input mgmt-host-input"
+                            value={node.sshHost ?? node.ip ?? ''}
+                            placeholder={node.ip || '192.168.1.1'}
+                            spellCheck={false}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, { sshHost: event.target.value })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.sshHost')}
+                          />
+                          <input
+                            className="mono-input mgmt-port-input"
+                            value={node.sshPort ?? '22'}
+                            placeholder="22"
+                            inputMode="numeric"
+                            spellCheck={false}
+                            onChange={(event) =>
+                              onUpdateNode(node.id, { sshPort: event.target.value.replace(/[^\d]/g, '') })
+                            }
+                            disabled={readOnly}
+                            aria-label={t('inspector.sshPort')}
+                          />
+                        </div>
+                        {sshHref ? (
+                          <a
+                            className="mgmt-link-anchor"
+                            href={sshHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {t('inspector.openSsh')}: {sshHref}
+                          </a>
+                        ) : (
+                          <span className="field-hint">{t('inspector.pingNeedsIp')}</span>
+                        )}
+                        <div className="mgmt-link-actions">
+                          <button
+                            type="button"
+                            className="secondary-button small-button"
+                            onClick={() => void copySshCommand()}
+                            disabled={readOnly || !sshCommand}
+                          >
+                            <Icon name="copy" size={14} />
+                            {t('inspector.copySshCommand')}
+                          </button>
+                        </div>
+                      </div>
+                    </>
                   )}
-                </div>
+                </section>
               )
             })()}
           </>

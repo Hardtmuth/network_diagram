@@ -118,6 +118,9 @@ export interface DeviceNode {
   mgmtProtocol?: 'http' | 'https'
   mgmtHost?: string
   mgmtPort?: string
+  sshUser?: string
+  sshHost?: string
+  sshPort?: string
 }
 
 export interface Connection {
