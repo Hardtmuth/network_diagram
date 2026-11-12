@@ -1930,6 +1930,21 @@ function LinkForm({
         </span>
       </div>
 
+      <div className="field">
+        <span className="field-label">{t('inspector.linkRoute')}</span>
+        <div className="inspector-actions" style={{ marginTop: 0 }}>
+          <button
+            type="button"
+            className="secondary-button is-wide"
+            onClick={() => onUpdateLink(link.id, { waypoints: [] })}
+            disabled={readOnly || !link.waypoints || link.waypoints.length === 0}
+          >
+            {t('inspector.resetRoute')}
+          </button>
+        </div>
+        <span className="field-hint">{t('inspector.linkRouteHint')}</span>
+      </div>
+
       <div className="link-meta">
         <span
           className="link-kind-swatch"

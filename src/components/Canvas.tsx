@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -53,6 +54,7 @@ interface CanvasProps {
   onMoveNode: (id: string, x: number, y: number) => void
   onMoveNodes: (moves: { id: string; x: number; y: number }[]) => void
   onConnect: (from: string, to: string) => void
+  onUpdateLink: (id: string, patch: Partial<Connection>) => void
   readOnly?: boolean
 }
 
@@ -88,12 +90,23 @@ interface ConnectDrag {
   targetId: string | null
 }
 
+interface WaypointDrag {
+  linkId: string
+  index: number
+  pointerId: number
+}
+
 interface GroupDrag {
   id: string
   pointerId: number
   startX: number
   startY: number
   nodes: { id: string; x: number; y: number }[]
+}
+
+interface Point {
+  x: number
+  y: number
 }
 
 interface AlignGuides {
@@ -109,27 +122,137 @@ const SNAP_THRESHOLD = 6
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
 
+function centerOf(node: DeviceNode, size: NodeSize) {
+  return { x: node.x + size.w / 2, y: node.y + size.h / 2 }
+}
+
+function anchorToward(node: DeviceNode, size: NodeSize, target: Point): Point {
+  const c = centerOf(node, size)
+  const dx = target.x - c.x
+  const dy = target.y - c.y
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { x: node.x + size.w, y: c.y }
+      : { x: node.x, y: c.y }
+  }
+  return dy >= 0
+    ? { x: c.x, y: node.y + size.h }
+    : { x: c.x, y: node.y }
+}
+
+function roundedPath(points: Point[], radius = 14) {
+  if (points.length === 0) return ''
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`
+  }
+
+  let d = `M ${points[0].x} ${points[0].y}`
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1]
+    const curr = points[i]
+    const next = points[i + 1]
+    const v1x = curr.x - prev.x
+    const v1y = curr.y - prev.y
+    const v2x = next.x - curr.x
+    const v2y = next.y - curr.y
+    const len1 = Math.hypot(v1x, v1y)
+    const len2 = Math.hypot(v2x, v2y)
+    if (len1 === 0 || len2 === 0) {
+      d += ` L ${curr.x} ${curr.y}`
+      continue
+    }
+    const r = Math.min(radius, len1 / 2, len2 / 2)
+    const p1x = curr.x - (v1x / len1) * r
+    const p1y = curr.y - (v1y / len1) * r
+    const p2x = curr.x + (v2x / len2) * r
+    const p2y = curr.y + (v2y / len2) * r
+    d += ` L ${p1x} ${p1y} Q ${curr.x} ${curr.y} ${p2x} ${p2y}`
+  }
+  const last = points[points.length - 1]
+  d += ` L ${last.x} ${last.y}`
+  return d
+}
+
+function pathMidpoint(points: Point[]): Point {
+  if (points.length === 0) return { x: 0, y: 0 }
+  if (points.length === 1) return points[0]
+  let total = 0
+  const segs: { len: number; a: Point; b: Point }[] = []
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]
+    const b = points[i]
+    const len = Math.hypot(b.x - a.x, b.y - a.y)
+    segs.push({ len, a, b })
+    total += len
+  }
+  if (total === 0) return points[0]
+  let dist = total / 2
+  for (const seg of segs) {
+    if (dist <= seg.len || seg === segs[segs.length - 1]) {
+      const t = seg.len === 0 ? 0 : dist / seg.len
+      return {
+        x: seg.a.x + (seg.b.x - seg.a.x) * t,
+        y: seg.a.y + (seg.b.y - seg.a.y) * t,
+      }
+    }
+    dist -= seg.len
+  }
+  return points[points.length - 1]
+}
+
+function distToSegment(p: Point, a: Point, b: Point) {
+  const abx = b.x - a.x
+  const aby = b.y - a.y
+  const apx = p.x - a.x
+  const apy = p.y - a.y
+  const ab2 = abx * abx + aby * aby
+  const t = ab2 === 0 ? 0 : clamp((apx * abx + apy * aby) / ab2, 0, 1)
+  const qx = a.x + abx * t
+  const qy = a.y + aby * t
+  return Math.hypot(p.x - qx, p.y - qy)
+}
+
 function edgeGeometry(
   from: DeviceNode,
   to: DeviceNode,
   fromSize: NodeSize,
   toSize: NodeSize,
+  waypoints: Point[] = [],
 ) {
-  const fromCenterX = from.x + fromSize.w / 2
-  const fromCenterY = from.y + fromSize.h / 2
-  const toCenterX = to.x + toSize.w / 2
-  const toCenterY = to.y + toSize.h / 2
+  if (waypoints.length > 0) {
+    const start = anchorToward(from, fromSize, waypoints[0])
+    const end = anchorToward(to, toSize, waypoints[waypoints.length - 1])
+    const points = [start, ...waypoints, end]
+    const mid = pathMidpoint(points)
+    return {
+      d: roundedPath(points, 14),
+      midX: mid.x,
+      midY: mid.y,
+      startX: start.x,
+      startY: start.y,
+      endX: end.x,
+      endY: end.y,
+      points,
+    }
+  }
 
-  const horizontal = Math.abs(toCenterX - fromCenterX) >= Math.abs(toCenterY - fromCenterY)
+  const fromCenter = centerOf(from, fromSize)
+  const toCenter = centerOf(to, toSize)
+  const horizontal = Math.abs(toCenter.x - fromCenter.x) >= Math.abs(toCenter.y - fromCenter.y)
 
   if (horizontal) {
-    const forward = toCenterX >= fromCenterX
+    const forward = toCenter.x >= fromCenter.x
     const startX = forward ? from.x + fromSize.w : from.x
-    const startY = fromCenterY
+    const startY = fromCenter.y
     const endX = forward ? to.x : to.x + toSize.w
-    const endY = toCenterY
+    const endY = toCenter.y
     const direction = forward ? 1 : -1
     const curve = Math.max(55, Math.abs(endX - startX) * 0.45)
+    const points = [
+      { x: startX, y: startY },
+      { x: endX, y: endY },
+    ]
     return {
       d: `M ${startX} ${startY} C ${startX + curve * direction} ${startY}, ${endX - curve * direction} ${endY}, ${endX} ${endY}`,
       midX: (startX + endX) / 2,
@@ -138,16 +261,21 @@ function edgeGeometry(
       startY,
       endX,
       endY,
+      points,
     }
   }
 
-  const forward = toCenterY >= fromCenterY
-  const startX = fromCenterX
+  const forward = toCenter.y >= fromCenter.y
+  const startX = fromCenter.x
   const startY = forward ? from.y + fromSize.h : from.y
-  const endX = toCenterX
+  const endX = toCenter.x
   const endY = forward ? to.y : to.y + toSize.h
   const direction = forward ? 1 : -1
   const curve = Math.max(45, Math.abs(endY - startY) * 0.45)
+  const points = [
+    { x: startX, y: startY },
+    { x: endX, y: endY },
+  ]
   return {
     d: `M ${startX} ${startY} C ${startX} ${startY + curve * direction}, ${endX} ${endY - curve * direction}, ${endX} ${endY}`,
     midX: (startX + endX) / 2,
@@ -156,6 +284,7 @@ function edgeGeometry(
     startY,
     endX,
     endY,
+    points,
   }
 }
 
@@ -170,6 +299,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onMoveNode,
     onMoveNodes,
     onConnect,
+    onUpdateLink,
     readOnly = false,
   },
   ref,
@@ -189,7 +319,11 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   const nodeDrag = useRef<NodeDrag | null>(null)
   const groupDrag = useRef<GroupDrag | null>(null)
   const panDrag = useRef<PanDrag | null>(null)
+  const waypointDrag = useRef<WaypointDrag | null>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
+  const defaultSize: NodeSize = { w: NODE_WIDTH, h: NODE_HEIGHT_FALLBACK }
+
+  const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
 
   useEffect(() => {
     sizesRef.current = sizes
@@ -677,7 +811,85 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     beginPan(event)
   }
 
+  const insertWaypoint = useCallback(
+    (connectionId: string, clientX: number, clientY: number) => {
+      if (readOnly) return
+      const connection = connections.find((item) => item.id === connectionId)
+      if (!connection) return
+      const from = nodeById.get(connection.from)
+      const to = nodeById.get(connection.to)
+      if (!from || !to) return
+      const geometry = edgeGeometry(
+        from,
+        to,
+        sizesRef.current[from.id] ?? defaultSize,
+        sizesRef.current[to.id] ?? defaultSize,
+        connection.waypoints ?? [],
+      )
+      const point = toWorld(clientX, clientY)
+      let bestIndex = 1
+      let bestDist = Number.POSITIVE_INFINITY
+      for (let i = 1; i < geometry.points.length; i++) {
+        const d = distToSegment(point, geometry.points[i - 1], geometry.points[i])
+        if (d < bestDist) {
+          bestDist = d
+          bestIndex = i
+        }
+      }
+      const next = [...(connection.waypoints ?? [])]
+      next.splice(Math.max(0, bestIndex - 1), 0, {
+        x: Math.round(point.x),
+        y: Math.round(point.y),
+      })
+      onUpdateLink(connectionId, { waypoints: next })
+    },
+    [connections, nodeById, onUpdateLink, readOnly, toWorld],
+  )
+
+  const removeWaypoint = useCallback(
+    (connectionId: string, index: number) => {
+      if (readOnly) return
+      const connection = connections.find((item) => item.id === connectionId)
+      if (!connection) return
+      const next = [...(connection.waypoints ?? [])]
+      next.splice(index, 1)
+      onUpdateLink(connectionId, { waypoints: next.length ? next : [] })
+    },
+    [connections, onUpdateLink, readOnly],
+  )
+
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (waypointDrag.current) {
+      const drag = waypointDrag.current
+      const connection = connections.find((item) => item.id === drag.linkId)
+      if (!connection) return
+      const from = nodeById.get(connection.from)
+      const to = nodeById.get(connection.to)
+      if (!from || !to) return
+      const point = toWorld(event.clientX, event.clientY)
+      const next = [...(connection.waypoints ?? [])]
+      if (!next[drag.index]) return
+      let x = Math.round(point.x)
+      let y = Math.round(point.y)
+      const geometry = edgeGeometry(
+        from,
+        to,
+        sizesRef.current[from.id] ?? defaultSize,
+        sizesRef.current[to.id] ?? defaultSize,
+        next,
+      )
+      const prevPoint = geometry.points[drag.index]
+      const nextPoint = geometry.points[drag.index + 2]
+      const alignThreshold = 8
+      if (prevPoint && Math.abs(x - prevPoint.x) <= alignThreshold) x = Math.round(prevPoint.x)
+      if (nextPoint && Math.abs(x - nextPoint.x) <= alignThreshold) x = Math.round(nextPoint.x)
+      if (prevPoint && Math.abs(y - prevPoint.y) <= alignThreshold) y = Math.round(prevPoint.y)
+      if (nextPoint && Math.abs(y - nextPoint.y) <= alignThreshold) y = Math.round(nextPoint.y)
+      next[drag.index] = { x, y }
+      onUpdateLink(drag.linkId, { waypoints: next })
+      return
+    }
+
     if (nodeDrag.current) {
       const drag = nodeDrag.current
       const point = toWorld(event.clientX, event.clientY)
@@ -746,6 +958,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
   }
 
   const finishPointer = (event: PointerEvent<HTMLDivElement>) => {
+    if (waypointDrag.current) {
+      waypointDrag.current = null
+      releasePointer(event.pointerId)
+      return
+    }
+
     if (nodeDrag.current) {
       nodeDrag.current = null
       setDraggingIds([])
@@ -786,6 +1004,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     nodeDrag.current = null
     groupDrag.current = null
     panDrag.current = null
+    waypointDrag.current = null
     setDraggingIds([])
     setDraggingGroupId(null)
     setPanning(false)
@@ -825,8 +1044,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     event.stopPropagation()
   }
 
-  const nodeById = new Map(nodes.map((node) => [node.id, node]))
-  const defaultSize: NodeSize = { w: NODE_WIDTH, h: NODE_HEIGHT_FALLBACK }
+  // nodeById and defaultSize are defined above
 
   const isNodeSelected = (id: string) => {
     if (selection?.type === 'node') return selection.id === id
@@ -968,11 +1186,13 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             const from = nodeById.get(connection.from)
             const to = nodeById.get(connection.to)
             if (!from || !to) return null
+            const waypoints = connection.waypoints ?? []
             const geometry = edgeGeometry(
               from,
               to,
               sizes[from.id] ?? defaultSize,
               sizes[to.id] ?? defaultSize,
+              waypoints,
             )
             const meta = LINK_META[connection.kind]
             const selected = selection?.type === 'link' && selection.id === connection.id
@@ -998,6 +1218,12 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     event.stopPropagation()
                     onSelect({ type: 'link', id: connection.id })
                   }}
+                  onDoubleClick={(event) => {
+                    event.stopPropagation()
+                    if (readOnly) return
+                    onSelect({ type: 'link', id: connection.id })
+                    insertWaypoint(connection.id, event.clientX, event.clientY)
+                  }}
                 />
                 <path
                   className="edge-line"
@@ -1006,6 +1232,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                   stroke={meta.color}
                   strokeWidth={2}
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                   opacity={0.66}
                   style={{ strokeDasharray: meta.dash }}
                 />
@@ -1066,6 +1293,49 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
                     })()}
                   </g>
                 )}
+                {selected &&
+                  !readOnly &&
+                  waypoints.map((point, index) => (
+                    <g key={`${connection.id}-wp-${index}`} className="edge-waypoint">
+                      <circle
+                        className="edge-waypoint-hit"
+                        cx={point.x}
+                        cy={point.y}
+                        r="10"
+                        fill="transparent"
+                        onPointerDown={(event) => {
+                          event.stopPropagation()
+                          event.preventDefault()
+                          const drag: WaypointDrag = {
+                            linkId: connection.id,
+                            index,
+                            pointerId: event.pointerId,
+                          }
+                          waypointDrag.current = drag
+                          capturePointer(event.pointerId)
+                        }}
+                        onDoubleClick={(event) => {
+                          event.stopPropagation()
+                          event.preventDefault()
+                          removeWaypoint(connection.id, index)
+                        }}
+                      />
+                      <circle
+                        className="edge-waypoint-dot"
+                        cx={point.x}
+                        cy={point.y}
+                        r="4.5"
+                        fill={meta.color}
+                        stroke={
+                          typeof document !== 'undefined' &&
+                          document.documentElement.dataset.theme === 'light'
+                            ? '#ffffff'
+                            : '#0b1220'
+                        }
+                        strokeWidth="1.5"
+                      />
+                    </g>
+                  ))}
               </g>
             )
           })}

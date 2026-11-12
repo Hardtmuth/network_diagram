@@ -80,9 +80,24 @@ function isDeviceNode(value: unknown): value is DeviceNode {
   )
 }
 
+function parseWaypoints(value: unknown): { x: number; y: number }[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) return undefined
+  const points = value
+    .filter(isRecord)
+    .map((item) => ({
+      x: typeof item.x === 'number' && Number.isFinite(item.x) ? item.x : NaN,
+      y: typeof item.y === 'number' && Number.isFinite(item.y) ? item.y : NaN,
+    }))
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+  return points.length > 0 ? points : undefined
+}
+
 function isConnection(value: unknown): value is Connection {
   if (!isRecord(value)) return false
   const vpnProtocol = value.vpnProtocol
+  const waypoints = value.waypoints
+  const waypointsOk = waypoints === undefined || Array.isArray(waypoints)
   return (
     typeof value.id === 'string' &&
     typeof value.from === 'string' &&
@@ -92,7 +107,8 @@ function isConnection(value: unknown): value is Connection {
     typeof value.label === 'string' &&
     (vpnProtocol === undefined ||
       (typeof vpnProtocol === 'string' &&
-        VPN_PROTOCOLS.includes(vpnProtocol as VpnProtocol)))
+        VPN_PROTOCOLS.includes(vpnProtocol as VpnProtocol))) &&
+    waypointsOk
   )
 }
 
@@ -327,6 +343,10 @@ function parseDiagram(value: unknown): DiagramSnapshot | null {
         nodeIds.has(connection.to) &&
         connection.from !== connection.to,
     )
+    .map((connection) => {
+      const waypoints = parseWaypoints((connection as unknown as Record<string, unknown>).waypoints)
+      return waypoints ? { ...connection, waypoints } : { ...connection, waypoints: undefined }
+    })
 
   const usedGroupMembers = new Set<string>()
   const rawGroups = Array.isArray(value.groups)
@@ -1441,6 +1461,7 @@ function App() {
                 onMoveNode={moveNode}
                 onMoveNodes={moveNodes}
                 onConnect={addConnection}
+                onUpdateLink={updateLink}
                 readOnly={readOnly}
               />
             ) : (

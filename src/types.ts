@@ -28,6 +28,11 @@ export type LinkKind = 'ethernet' | 'fiber' | 'wifi' | 'usb' | 'vpn' | 'coaxial'
 
 export type VpnProtocol = 'l2tp' | 'openvpn' | 'wireguard'
 
+export interface Point {
+  x: number
+  y: number
+}
+
 export type DiskType = 'sata-ssd' | 'hdd' | 'nvme' | 'm2-sata'
 
 export type RaidLevel =
@@ -118,6 +123,7 @@ export interface Connection {
   kind: LinkKind
   label: string
   vpnProtocol?: VpnProtocol
+  waypoints?: Point[]
 }
 
 export interface DeviceGroup {
