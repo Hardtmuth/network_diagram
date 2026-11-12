@@ -28,6 +28,7 @@ interface DeviceNodeProps {
   dragging: boolean
   isConnectSource: boolean
   isConnectTarget: boolean
+  pingStatus?: 'up' | 'down' | 'unknown'
   onPointerDown: (event: PointerEvent<HTMLElement>, node: DeviceNodeType) => void
   onConnectStart: (event: PointerEvent<HTMLElement>, node: DeviceNodeType) => void
   onMeasure: (id: string, width: number, height: number) => void
@@ -39,6 +40,7 @@ export function DeviceNode({
   dragging,
   isConnectSource,
   isConnectTarget,
+  pingStatus,
   onPointerDown,
   onConnectStart,
   onMeasure,
@@ -162,6 +164,13 @@ export function DeviceNode({
           <span className="node-kind">{label}</span>
           <span className="node-name">{node.name || label}</span>
         </span>
+        {node.pingEnabled && (
+          <span
+            className={`node-ping-indicator is-${pingStatus ?? 'unknown'}`}
+            title={t(`node.ping.${pingStatus ?? 'unknown'}`, { defaultValue: pingStatus ?? 'unknown' })}
+            aria-label={t(`node.ping.${pingStatus ?? 'unknown'}`, { defaultValue: pingStatus ?? 'unknown' })}
+          />
+        )}
         <span className="node-grip">
           <Icon name="grip" size={14} />
         </span>

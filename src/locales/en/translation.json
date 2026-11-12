@@ -82,7 +82,7 @@
     "dropHint": "Drop to add a device",
     "emptyTitle": "Build your diagram",
     "emptyText": "Drag a device from the left library or click it to add to the canvas center.",
-    "hint": "Drag a device · pull from a point to connect",
+    "hint": "Drag a device · pull from a point to connect · double-click a connection to add a bend",
     "zoomOut": "Zoom out",
     "zoomOutAria": "Zoom out",
     "zoomIn": "Zoom in",
@@ -114,7 +114,12 @@
     "disk_many": "disks",
     "core_one": "core",
     "core_few": "cores",
-    "core_many": "cores"
+    "core_many": "cores",
+    "ping": {
+      "up": "Device is reachable (ping)",
+      "down": "Device is not reachable (ping)",
+      "unknown": "Ping status unknown"
+    }
   },
   "inspector": {
     "eyebrow": "Inspector",
@@ -229,6 +234,9 @@
     "linkRoute": "Route",
     "resetRoute": "Reset route",
     "linkRouteHint": "Double-click the line to add a bend point. Drag a point to reshape the route, double-click a point to remove it.",
+    "pingMonitoring": "Ping monitoring",
+    "pingMonitoringHint": "The server will check device availability about every 2–3 minutes.",
+    "pingNeedsIp": "Specify an IP address to run checks.",
     "groupNamePlaceholder": "e.g. Server room",
     "groupDevices": "Devices in group",
     "groupDragHint": "Drag the group header on the canvas to move all devices at once.",

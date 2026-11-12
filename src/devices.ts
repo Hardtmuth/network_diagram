@@ -313,3 +313,14 @@ export const ISP_CONNECTION_TYPES = ['pppoe', 'static', 'dhcp'] as const
 export const DND_MIME = 'application/x-homelab-device'
 export const NODE_WIDTH = 236
 export const NODE_HEIGHT_FALLBACK = 142
+
+export const PING_KINDS: DeviceKind[] = [
+  'router',
+  'switch',
+  'ap',
+  'server',
+  'nas',
+  'vm',
+  'recorder',
+]
+export const PING_INTERVAL_MS = 150000

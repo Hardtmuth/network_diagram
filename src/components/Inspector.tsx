@@ -12,6 +12,7 @@ import {
   LINK_KINDS,
   LINK_META,
   OS_KINDS,
+  PING_KINDS,
   PORT_KINDS,
   PORT_TYPES,
   PORT_TYPE_META,
@@ -489,6 +490,8 @@ function NodeForm({
           </>
         )}
 
+
+
       {(HARDWARE_KINDS.includes(node.kind) || node.kind === 'mobile') && (
         <HardwareSection
           node={node}
@@ -584,6 +587,36 @@ function NodeForm({
           }
          disabled={readOnly} />
       </div>
+
+      {PING_KINDS.includes(node.kind) && (
+        <div className="field">
+          <label className="field-label" htmlFor="node-ping-enabled">
+            {t('inspector.pingMonitoring')}
+          </label>
+          <label className={`switch-control${readOnly ? ' is-disabled' : ''}`} htmlFor="node-ping-enabled">
+            <input
+              id="node-ping-enabled"
+              type="checkbox"
+              className="switch-input"
+              checked={Boolean(node.pingEnabled)}
+              onChange={(event) =>
+                onUpdateNode(node.id, { pingEnabled: event.target.checked })
+              }
+              disabled={readOnly}
+            />
+            <span className="switch-track" aria-hidden="true">
+              <span className="switch-thumb" />
+            </span>
+            <span className="switch-text">
+              {node.pingEnabled ? t('common.yes') : t('common.no')}
+            </span>
+          </label>
+          <span className="field-hint">
+            {t('inspector.pingMonitoringHint')}
+            {!node.ip?.trim() ? ` ${t('inspector.pingNeedsIp')}` : ''}
+          </span>
+        </div>
+      )}
 
       <div className="inspector-actions">
         <button

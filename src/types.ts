@@ -114,6 +114,7 @@ export interface DeviceNode {
   raids?: RaidGroup[]
   ports?: PortGroup[]
   recorderType?: RecorderType
+  pingEnabled?: boolean
 }
 
 export interface Connection {

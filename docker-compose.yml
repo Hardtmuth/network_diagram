@@ -6,3 +6,7 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    cap_add:
+      - NET_RAW
+    environment:
+      - PORT=80

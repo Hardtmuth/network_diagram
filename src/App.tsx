@@ -16,6 +16,8 @@ import {
   DEVICE_META,
   DISK_TYPES,
   GROUP_COLORS,
+  PING_INTERVAL_MS,
+  PING_KINDS,
   PORT_TYPES,
   RAID_LEVELS,
 } from './devices'
@@ -188,6 +190,7 @@ function parseNode(value: unknown): DeviceNode | null {
     model: value.model,
     notes: value.notes,
   }
+  if (typeof record.pingEnabled === 'boolean') node.pingEnabled = record.pingEnabled
 
   if (typeof record.os === 'string') node.os = record.os
   if (typeof value.ip === 'string') node.ip = value.ip
@@ -422,6 +425,7 @@ function App() {
   const [showInspector, setShowInspector] = useState(true)
   const [readOnly, setReadOnly] = useState(false)
   const [editorView, setEditorView] = useState<'diagram' | 'table'>('diagram')
+  const [pingStatuses, setPingStatuses] = useState<Record<string, 'up' | 'down' | 'unknown'>>({})
   const canvasRef = useRef<CanvasHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importTargetRef = useRef<'dashboard' | 'editor'>('dashboard')
@@ -568,6 +572,63 @@ function App() {
       setDiagram({ ...diagram, title })
     }
   }
+
+  useEffect(() => {
+    if (view !== 'editor' || !diagram) return
+
+    let cancelled = false
+    const run = async () => {
+      const targets = diagram.nodes.filter(
+        (node) =>
+          node.pingEnabled &&
+          PING_KINDS.includes(node.kind) &&
+          typeof node.ip === 'string' &&
+          node.ip.trim().length > 0,
+      )
+
+      setPingStatuses((prev) => {
+        const next: Record<string, 'up' | 'down' | 'unknown'> = {}
+        for (const node of targets) next[node.id] = prev[node.id] ?? 'unknown'
+        const prevKeys = Object.keys(prev)
+        const nextKeys = Object.keys(next)
+        if (
+          prevKeys.length === nextKeys.length &&
+          nextKeys.every((key) => prev[key] === next[key])
+        ) {
+          return prev
+        }
+        return next
+      })
+
+      await Promise.all(
+        targets.map(async (node) => {
+          try {
+            const response = await fetch(`/api/ping?host=${encodeURIComponent(node.ip!.trim())}`)
+            if (!response.ok) throw new Error('bad response')
+            const data = (await response.json()) as { ok?: boolean; alive?: boolean }
+            const status: 'up' | 'down' = data.ok && data.alive ? 'up' : 'down'
+            if (!cancelled) {
+              setPingStatuses((prev) => (prev[node.id] === status ? prev : { ...prev, [node.id]: status }))
+            }
+          } catch {
+            if (!cancelled) {
+              setPingStatuses((prev) => (prev[node.id] === 'down' ? prev : { ...prev, [node.id]: 'down' }))
+            }
+          }
+        }),
+      )
+    }
+
+    void run()
+    const timer = window.setInterval(() => {
+      void run()
+    }, PING_INTERVAL_MS)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [diagram, view])
 
   // Autosave current diagram into store
   useEffect(() => {
@@ -1462,6 +1523,7 @@ function App() {
                 onMoveNodes={moveNodes}
                 onConnect={addConnection}
                 onUpdateLink={updateLink}
+                pingStatuses={pingStatuses}
                 readOnly={readOnly}
               />
             ) : (

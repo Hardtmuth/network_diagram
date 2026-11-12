@@ -55,6 +55,7 @@ interface CanvasProps {
   onMoveNodes: (moves: { id: string; x: number; y: number }[]) => void
   onConnect: (from: string, to: string) => void
   onUpdateLink: (id: string, patch: Partial<Connection>) => void
+  pingStatuses?: Record<string, 'up' | 'down' | 'unknown'>
   readOnly?: boolean
 }
 
@@ -300,6 +301,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
     onMoveNodes,
     onConnect,
     onUpdateLink,
+    pingStatuses,
     readOnly = false,
   },
   ref,
@@ -1397,6 +1399,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(function Canvas(
             dragging={draggingIds.includes(node.id)}
             isConnectSource={connecting?.from === node.id}
             isConnectTarget={connecting?.targetId === node.id}
+            pingStatus={pingStatuses?.[node.id]}
             onPointerDown={handleNodePointerDown}
             onConnectStart={handleConnectStart}
             onMeasure={onMeasure}
