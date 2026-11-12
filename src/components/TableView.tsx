@@ -11,6 +11,7 @@ import {
 import type {
   Connection,
   DeviceGroup,
+  DeviceKind,
   DeviceNode,
   Selection,
 } from '../types'
@@ -89,6 +90,8 @@ export function TableView({
   const [networkSort, setNetworkSort] = useState<SortState>({ key: 'name', dir: 'asc' })
   const [linkSort, setLinkSort] = useState<SortState>({ key: 'from', dir: 'asc' })
   const [groupSort, setGroupSort] = useState<SortState>({ key: 'name', dir: 'asc' })
+  const [nodeKindFilter, setNodeKindFilter] = useState<DeviceKind[]>([])
+  const [networkKindFilter, setNetworkKindFilter] = useState<DeviceKind[]>([])
 
   const q = searchQuery.trim().toLowerCase()
   const nodeById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
@@ -159,6 +162,9 @@ export function TableView({
 
   const filteredNodes = useMemo(() => {
     let list = nodes
+    if (nodeKindFilter.length > 0) {
+      list = list.filter((n) => nodeKindFilter.includes(n.kind))
+    }
     if (q) {
       list = list.filter((n) => {
         const group = groupByNodeId.get(n.id)?.name || ''
@@ -184,7 +190,7 @@ export function TableView({
       }
     })
     return sorted
-  }, [nodes, q, nodeSort, groupByNodeId])
+  }, [nodes, q, nodeSort, groupByNodeId, nodeKindFilter])
 
   const getMgmtUrl = (node: DeviceNode) => {
     const protocol = node.mgmtProtocol ?? 'http'
@@ -223,6 +229,9 @@ export function TableView({
 
   const filteredNetworkNodes = useMemo(() => {
     let list = nodes.filter((n) => NETWORK_KINDS.includes(n.kind))
+    if (networkKindFilter.length > 0) {
+      list = list.filter((n) => networkKindFilter.includes(n.kind))
+    }
     if (q) {
       list = list.filter((n) => {
         const group = groupByNodeId.get(n.id)?.name || ''
@@ -252,7 +261,7 @@ export function TableView({
       }
     })
     return sorted
-  }, [nodes, q, networkSort, groupByNodeId, pingStatuses, t])
+  }, [nodes, q, networkSort, groupByNodeId, pingStatuses, t, networkKindFilter])
 
   const filteredConnections = useMemo(() => {
     let list = connections
@@ -298,6 +307,23 @@ export function TableView({
     return sorted
   }, [groups, q, groupSort, nodeById])
 
+  const availableNodeKinds = useMemo(
+    () => Array.from(new Set(nodes.map((n) => n.kind))),
+    [nodes],
+  )
+  const availableNetworkKinds = useMemo(
+    () => NETWORK_KINDS.filter((k) => nodes.some((n) => n.kind === k)),
+    [nodes],
+  )
+
+  const toggleKindFilter = (
+    kind: DeviceKind,
+    current: DeviceKind[],
+    set: (v: DeviceKind[]) => void,
+  ) => {
+    set(current.includes(kind) ? current.filter((k) => k !== kind) : [...current, kind])
+  }
+
   return (
     <div className="table-view">
       <div className="table-view-tabs">
@@ -315,6 +341,41 @@ export function TableView({
         </button>
         {q && <span className="table-view-filter">{t('table.filteredBy', { query: searchQuery.trim() })}</span>}
       </div>
+
+      {(tab === 'nodes' || tab === 'network') && (
+        <div className="table-type-filter">
+          <span className="table-type-filter-label">{t('table.filterByType')}:</span>
+          <div className="table-type-filter-chips">
+            {(tab === 'nodes' ? availableNodeKinds : availableNetworkKinds).map((kind) => {
+              const active = (tab === 'nodes' ? nodeKindFilter : networkKindFilter).includes(kind)
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  className={`table-type-chip ${active ? 'is-active' : ''}`}
+                  onClick={() =>
+                    tab === 'nodes'
+                      ? toggleKindFilter(kind, nodeKindFilter, setNodeKindFilter)
+                      : toggleKindFilter(kind, networkKindFilter, setNetworkKindFilter)
+                  }
+                >
+                  <span className="table-type-chip-icon"><DeviceIcon kind={kind} size={14} /></span>
+                  {deviceLabel(kind)}
+                </button>
+              )
+            })}
+            {((tab === 'nodes' ? nodeKindFilter : networkKindFilter).length > 0) && (
+              <button
+                type="button"
+                className="table-type-chip is-clear"
+                onClick={() => (tab === 'nodes' ? setNodeKindFilter([]) : setNetworkKindFilter([]))}
+              >
+                {t('table.clearFilter')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="table-view-body">
         {tab === 'nodes' && (

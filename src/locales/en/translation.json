@@ -500,7 +500,9 @@
     "networkDevices": "Network devices",
     "connectionCount": "Connections",
     "ping": "Ping",
-    "pingDisabled": "Disabled"
+    "pingDisabled": "Disabled",
+    "filterByType": "Device types",
+    "clearFilter": "Clear"
   },
   "defaults": {
     "myNetwork": "My network",

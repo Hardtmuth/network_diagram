@@ -500,7 +500,9 @@
     "networkDevices": "Сетевые устройства",
     "connectionCount": "Подключения",
     "ping": "Ping",
-    "pingDisabled": "Выключен"
+    "pingDisabled": "Выключен",
+    "filterByType": "Типы устройств",
+    "clearFilter": "Сбросить"
   },
   "defaults": {
     "myNetwork": "Моя сеть",

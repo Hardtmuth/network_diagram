@@ -3703,3 +3703,58 @@ kbd {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.table-type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.table-type-filter-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.table-type-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.table-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.table-type-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.table-type-chip.is-active {
+  color: var(--text-strong);
+  background: rgba(94, 234, 212, 0.08);
+  border-color: rgba(94, 234, 212, 0.35);
+}
+
+.table-type-chip.is-clear {
+  color: var(--muted);
+}
+
+.table-type-chip-icon {
+  display: inline-flex;
+}
