@@ -1546,6 +1546,7 @@ function App() {
                 selection={selection}
                 searchQuery={searchQuery}
                 readOnly={readOnly}
+                pingStatuses={pingStatuses}
                 onSelect={setSelection}
                 onDeleteNode={deleteNode}
                 onDeleteLink={deleteLink}

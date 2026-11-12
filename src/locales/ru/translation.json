@@ -496,7 +496,11 @@
     "from": "Откуда",
     "to": "Куда",
     "membersCount": "Устройств",
-    "members": "Состав группы"
+    "members": "Состав группы",
+    "networkDevices": "Сетевые устройства",
+    "connectionCount": "Подключения",
+    "ping": "Ping",
+    "pingDisabled": "Выключен"
   },
   "defaults": {
     "myNetwork": "Моя сеть",

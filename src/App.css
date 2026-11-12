@@ -3515,13 +3515,19 @@ kbd {
 /* ---------- Ping indicator ---------- */
 
 .node-ping-indicator {
+  display: inline-block;
   width: 9px;
   height: 9px;
   flex: 0 0 auto;
   border-radius: 50%;
   margin-left: auto;
   margin-right: 2px;
+  vertical-align: middle;
   box-shadow: 0 0 0 2px rgba(7, 11, 19, 0.65);
+}
+
+.data-table .node-ping-indicator {
+  margin: 0;
 }
 
 .node-ping-indicator.is-up {
@@ -3666,4 +3672,34 @@ kbd {
 
 .mgmt-link-actions {
   margin-top: 8px;
+}
+
+.table-conn-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.table-link,
+.table-link-button {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--accent, #60a5fa);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.35));
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.table-link:hover,
+.table-link-button:hover {
+  text-decoration: underline;
+}
+
+.table-link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

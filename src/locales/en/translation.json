@@ -496,7 +496,11 @@
     "from": "From",
     "to": "To",
     "membersCount": "Devices",
-    "members": "Members"
+    "members": "Members",
+    "networkDevices": "Network devices",
+    "connectionCount": "Connections",
+    "ping": "Ping",
+    "pingDisabled": "Disabled"
   },
   "defaults": {
     "myNetwork": "My network",

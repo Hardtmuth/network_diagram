@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { MouseEvent } from 'react'
 
 import { useTranslation } from 'react-i18next'
 import { DEVICE_META, LINK_META, VPN_PROTOCOL_META } from '../devices'
@@ -16,7 +17,7 @@ import type {
 import { DeviceIcon } from './DeviceIcon'
 import { Icon } from './Icons'
 
-type Tab = 'nodes' | 'connections' | 'groups'
+type Tab = 'nodes' | 'network' | 'connections' | 'groups'
 
 interface TableViewProps {
   nodes: DeviceNode[]
@@ -25,12 +26,15 @@ interface TableViewProps {
   selection: Selection
   searchQuery: string
   readOnly: boolean
+  pingStatuses?: Record<string, 'up' | 'down' | 'unknown'>
   onSelect: (selection: Selection) => void
   onDeleteNode: (id: string) => void
   onDeleteLink: (id: string) => void
   onUngroup: (id: string) => void
   onShowOnDiagram: (selection: Selection) => void
 }
+
+const NETWORK_KINDS: DeviceNode['kind'][] = ['router', 'switch', 'ap']
 
 type SortDir = 'asc' | 'desc'
 
@@ -72,6 +76,7 @@ export function TableView({
   selection,
   searchQuery,
   readOnly,
+  pingStatuses,
   onSelect,
   onDeleteNode,
   onDeleteLink,
@@ -81,6 +86,7 @@ export function TableView({
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('nodes')
   const [nodeSort, setNodeSort] = useState<SortState>({ key: 'name', dir: 'asc' })
+  const [networkSort, setNetworkSort] = useState<SortState>({ key: 'name', dir: 'asc' })
   const [linkSort, setLinkSort] = useState<SortState>({ key: 'from', dir: 'asc' })
   const [groupSort, setGroupSort] = useState<SortState>({ key: 'name', dir: 'asc' })
 
@@ -180,6 +186,74 @@ export function TableView({
     return sorted
   }, [nodes, q, nodeSort, groupByNodeId])
 
+  const getMgmtUrl = (node: DeviceNode) => {
+    const protocol = node.mgmtProtocol ?? 'http'
+    const host = (node.mgmtHost ?? node.ip ?? '').trim()
+    const port = (node.mgmtPort ?? '80').trim() || '80'
+    if (!host) return ''
+    return `${protocol}://${host}${port ? `:${port}` : ''}`
+  }
+
+  const getSshUrl = (node: DeviceNode) => {
+    const sshUser = (node.sshUser ?? '').trim()
+    const sshHost = (node.sshHost ?? node.ip ?? '').trim()
+    const sshPort = (node.sshPort ?? '22').trim() || '22'
+    if (!sshHost) return ''
+    const authority = `${sshUser ? `${encodeURIComponent(sshUser)}@` : ''}${sshHost}${sshPort ? `:${sshPort}` : ''}`
+    return `ssh://${authority}`
+  }
+
+  const getSshCommand = (node: DeviceNode) => {
+    const sshUser = (node.sshUser ?? '').trim()
+    const sshHost = (node.sshHost ?? node.ip ?? '').trim()
+    const sshPort = (node.sshPort ?? '22').trim() || '22'
+    if (!sshHost) return ''
+    return `ssh ${sshUser ? `${sshUser}@` : ''}${sshHost}${sshPort ? ` -p ${sshPort}` : ''}`
+  }
+
+  const pingStatusClass = (node: DeviceNode) => {
+    if (!node.pingEnabled) return 'is-unknown'
+    return pingStatuses?.[node.id] ?? 'unknown'
+  }
+
+  const pingStatusTitle = (node: DeviceNode) => {
+    if (!node.pingEnabled) return t('table.pingDisabled')
+    return t(`node.ping.${pingStatuses?.[node.id] ?? 'unknown'}`)
+  }
+
+  const filteredNetworkNodes = useMemo(() => {
+    let list = nodes.filter((n) => NETWORK_KINDS.includes(n.kind))
+    if (q) {
+      list = list.filter((n) => {
+        const group = groupByNodeId.get(n.id)?.name || ''
+        const hay = [n.name, deviceLabel(n.kind), n.model, n.ip, n.mac, group, n.notes, getMgmtUrl(n), getSshUrl(n)]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return hay.includes(q)
+      })
+    }
+    const sorted = [...list].sort((a, b) => {
+      switch (networkSort.key) {
+        case 'kind': return compare(deviceLabel(a.kind), deviceLabel(b.kind), networkSort.dir)
+        case 'name': return compare(nodeDisplayName(a).toLowerCase(), nodeDisplayName(b).toLowerCase(), networkSort.dir)
+        case 'ip': return compare(a.ip || '', b.ip || '', networkSort.dir)
+        case 'ping': {
+          const statusOrder = (node: DeviceNode) => {
+            if (!node.pingEnabled) return 3
+            const s = pingStatuses?.[node.id]
+            if (s === 'up') return 0
+            if (s === 'down') return 1
+            return 2
+          }
+          return compare(statusOrder(a), statusOrder(b), networkSort.dir)
+        }
+        default: return 0
+      }
+    })
+    return sorted
+  }, [nodes, q, networkSort, groupByNodeId, pingStatuses, t])
+
   const filteredConnections = useMemo(() => {
     let list = connections
     if (q) {
@@ -229,6 +303,9 @@ export function TableView({
       <div className="table-view-tabs">
         <button type="button" className={`table-tab ${tab === 'nodes' ? 'is-active' : ''}`} onClick={() => setTab('nodes')}>
           {t('common.devices')} <span className="table-tab-count">{filteredNodes.length}</span>
+        </button>
+        <button type="button" className={`table-tab ${tab === 'network' ? 'is-active' : ''}`} onClick={() => setTab('network')}>
+          {t('table.networkDevices')} <span className="table-tab-count">{filteredNetworkNodes.length}</span>
         </button>
         <button type="button" className={`table-tab ${tab === 'connections' ? 'is-active' : ''}`} onClick={() => setTab('connections')}>
           {t('common.connections')} <span className="table-tab-count">{filteredConnections.length}</span>
@@ -282,6 +359,104 @@ export function TableView({
                       <td>{group?.name || '—'}</td>
                       <td className="table-cell-wrap">{nodeConfigSummary(node)}</td>
                       <td className="table-cell-wrap">{node.notes || '—'}</td>
+                      <td className="table-actions-cell" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="table-action" title={t('table.showOnDiagram')} onClick={() => onShowOnDiagram({ type: 'node', id: node.id })}>
+                          <Icon name="topology" size={14} />
+                        </button>
+                        <button type="button" className="table-action is-danger" title={t('common.delete')} disabled={readOnly} onClick={() => onDeleteNode(node.id)}>
+                          <Icon name="trash" size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'network' && (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th><SortHeader label={t('inspector.nodeType')} sortKey="kind" sort={networkSort} onSort={(k) => toggleSort(networkSort, k, setNetworkSort)} /></th>
+                  <th><SortHeader label={t('inspector.nodeName')} sortKey="name" sort={networkSort} onSort={(k) => toggleSort(networkSort, k, setNetworkSort)} /></th>
+                  <th><SortHeader label={t('inspector.nodeIp')} sortKey="ip" sort={networkSort} onSort={(k) => toggleSort(networkSort, k, setNetworkSort)} /></th>
+                  <th>{t('table.connectionCount')}</th>
+                  <th><SortHeader label={t('table.ping')} sortKey="ping" sort={networkSort} onSort={(k) => toggleSort(networkSort, k, setNetworkSort)} /></th>
+                  <th>{t('table.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredNetworkNodes.length === 0 ? (
+                  <tr><td colSpan={6} className="table-empty">{t('table.empty')}</td></tr>
+                ) : filteredNetworkNodes.map((node) => {
+                  const mgmtUrl = getMgmtUrl(node)
+                  const sshUrl = getSshUrl(node)
+                  const sshCmd = getSshCommand(node)
+                  const copySsh = async (e: MouseEvent) => {
+                    e.stopPropagation()
+                    if (!sshCmd) return
+                    try {
+                      await navigator.clipboard.writeText(sshCmd)
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  return (
+                    <tr
+                      key={node.id}
+                      className={isNodeSelected(node.id) ? 'is-selected' : ''}
+                      onClick={() => onSelect({ type: 'node', id: node.id })}
+                    >
+                      <td>
+                        <span className="table-device-kind">
+                          <span className="table-kind-icon"><DeviceIcon kind={node.kind} size={16} /></span>
+                          {deviceLabel(node.kind)}
+                        </span>
+                      </td>
+                      <td className="is-strong">{nodeDisplayName(node)}</td>
+                      <td className="mono">{node.ip || '—'}</td>
+                      <td className="table-cell-wrap">
+                        <div className="table-conn-links">
+                          {mgmtUrl && (
+                            <a
+                              className="table-link"
+                              href={mgmtUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Web
+                            </a>
+                          )}
+                          {sshUrl && (
+                            <a
+                              className="table-link"
+                              href={sshUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              SSH
+                            </a>
+                          )}
+                          {sshCmd && !readOnly && (
+                            <button type="button" className="table-link-button" onClick={copySsh}>
+                              {t('inspector.copySshCommand')}
+                            </button>
+                          )}
+                          {!mgmtUrl && !sshUrl && <span>—</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`node-ping-indicator is-${pingStatusClass(node)}`}
+                          title={pingStatusTitle(node)}
+                          aria-label={pingStatusTitle(node)}
+                        />
+                      </td>
                       <td className="table-actions-cell" onClick={(e) => e.stopPropagation()}>
                         <button type="button" className="table-action" title={t('table.showOnDiagram')} onClick={() => onShowOnDiagram({ type: 'node', id: node.id })}>
                           <Icon name="topology" size={14} />
