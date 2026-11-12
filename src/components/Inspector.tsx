@@ -21,6 +21,8 @@ import {
   VPN_PROTOCOLS,
   VPN_PROTOCOL_META,
 } from '../devices'
+
+const MGMT_LINK_KINDS: DeviceKind[] = ['router', 'switch', 'ap', 'nas']
 import { MOBILE_OS_PRESETS, OS_PRESETS, OsIcon, getOsPreset } from '../os'
 import {
   createRowId,
@@ -487,6 +489,68 @@ function NodeForm({
                 }
                disabled={readOnly} />
             </div>
+
+            {MGMT_LINK_KINDS.includes(node.kind) && (() => {
+              const protocol = node.mgmtProtocol ?? 'http'
+              const host = (node.mgmtHost ?? node.ip ?? '').trim()
+              const port = (node.mgmtPort ?? '80').trim() || '80'
+              const href = host ? `${protocol}://${host}${port ? `:${port}` : ''}` : ''
+              return (
+                <div className="field">
+                  <label className="field-label">{t('inspector.managementLink')}</label>
+                  <div className="mgmt-link-row">
+                    <select
+                      value={protocol}
+                      onChange={(event) =>
+                        onUpdateNode(node.id, {
+                          mgmtProtocol: event.target.value as 'http' | 'https',
+                        })
+                      }
+                      disabled={readOnly}
+                      aria-label={t('inspector.mgmtProtocol')}
+                    >
+                      <option value="http">http</option>
+                      <option value="https">https</option>
+                    </select>
+                    <input
+                      className="mono-input mgmt-host-input"
+                      value={node.mgmtHost ?? node.ip ?? ''}
+                      placeholder={node.ip || '192.168.1.1'}
+                      spellCheck={false}
+                      onChange={(event) =>
+                        onUpdateNode(node.id, { mgmtHost: event.target.value })
+                      }
+                      disabled={readOnly}
+                      aria-label={t('inspector.mgmtHost')}
+                    />
+                    <input
+                      className="mono-input mgmt-port-input"
+                      value={node.mgmtPort ?? '80'}
+                      placeholder="80"
+                      inputMode="numeric"
+                      spellCheck={false}
+                      onChange={(event) =>
+                        onUpdateNode(node.id, { mgmtPort: event.target.value.replace(/[^\d]/g, '') })
+                      }
+                      disabled={readOnly}
+                      aria-label={t('inspector.mgmtPort')}
+                    />
+                  </div>
+                  {href ? (
+                    <a
+                      className="mgmt-link-anchor"
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('inspector.openLink')}: {href}
+                    </a>
+                  ) : (
+                    <span className="field-hint">{t('inspector.pingNeedsIp')}</span>
+                  )}
+                </div>
+              )
+            })()}
           </>
         )}
 

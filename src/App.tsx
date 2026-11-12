@@ -191,6 +191,13 @@ function parseNode(value: unknown): DeviceNode | null {
     notes: value.notes,
   }
   if (typeof record.pingEnabled === 'boolean') node.pingEnabled = record.pingEnabled
+  if (record.mgmtProtocol === 'http' || record.mgmtProtocol === 'https') {
+    node.mgmtProtocol = record.mgmtProtocol
+  }
+  if (typeof record.mgmtHost === 'string') node.mgmtHost = record.mgmtHost
+  if (typeof record.mgmtPort === 'string' || typeof record.mgmtPort === 'number') {
+    node.mgmtPort = String(record.mgmtPort)
+  }
 
   if (typeof record.os === 'string') node.os = record.os
   if (typeof value.ip === 'string') node.ip = value.ip

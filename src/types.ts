@@ -115,6 +115,9 @@ export interface DeviceNode {
   ports?: PortGroup[]
   recorderType?: RecorderType
   pingEnabled?: boolean
+  mgmtProtocol?: 'http' | 'https'
+  mgmtHost?: string
+  mgmtPort?: string
 }
 
 export interface Connection {

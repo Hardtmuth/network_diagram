@@ -3628,3 +3628,34 @@ kbd {
   color: var(--text, #e5e7eb);
   user-select: none;
 }
+
+/* ---------- Management link ---------- */
+
+.mgmt-link-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 72px;
+  gap: 8px;
+  align-items: center;
+}
+
+.mgmt-host-input {
+  min-width: 0;
+}
+
+.mgmt-port-input {
+  min-width: 0;
+  text-align: center;
+}
+
+.mgmt-link-anchor {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--accent, #60a5fa);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.mgmt-link-anchor:hover {
+  text-decoration: underline;
+}
